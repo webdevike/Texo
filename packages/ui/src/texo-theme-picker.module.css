@@ -1,0 +1,9 @@
+.option[data-combobox-selected] {
+  background: transparent;
+  color: inherit;
+}
+
+.option[data-combobox-selected] > svg {
+  color: var(--mantine-color-dimmed);
+  opacity: 0.65;
+}

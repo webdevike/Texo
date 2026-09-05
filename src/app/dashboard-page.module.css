@@ -1,0 +1,217 @@
+.dashboard {
+  min-height: 700px;
+  display: grid;
+  grid-template-columns: var(--texo-sidebar-width) minmax(0, 1fr);
+  overflow: hidden;
+  border-radius: var(--mantine-radius-md);
+  background: var(--mantine-color-body);
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  min-height: 700px;
+  padding: var(--mantine-spacing-md) var(--mantine-spacing-sm) var(--mantine-spacing-sm);
+  background: var(--mantine-color-body);
+}
+
+.navItem {
+  height: var(--texo-sidebar-row-height);
+  min-height: var(--texo-sidebar-row-height);
+  padding-block: 0;
+  padding-inline: calc(var(--mantine-spacing-xs) / 2);
+  border-radius: var(--mantine-radius-sm);
+  color: var(--mantine-color-text);
+}
+
+.navItem[data-active] {
+  background: var(--texo-sidebar-active-background);
+  color: var(--texo-sidebar-active-color);
+}
+
+.sectionLabel {
+  display: var(--texo-sidebar-section-display);
+  margin: var(--mantine-spacing-lg) 0 2px;
+  font-size: calc(var(--mantine-font-size-xs) * 0.875);
+}
+
+.utilityNav {
+  margin-top: auto;
+}
+
+.profile {
+  justify-content: space-between;
+  margin-top: var(--mantine-spacing-sm);
+  padding: var(--mantine-spacing-xs);
+}
+
+.avatar {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  place-items: center;
+  border-radius: var(--mantine-radius-sm);
+  background: var(--mantine-color-default-hover);
+  color: var(--mantine-color-dimmed);
+  font-size: var(--mantine-font-size-xs);
+}
+
+.content {
+  min-width: 0;
+  margin: var(--mantine-spacing-sm) var(--mantine-spacing-sm) var(--mantine-spacing-sm) 0;
+  overflow: hidden;
+  border-radius: var(--mantine-radius-md);
+  background: var(--texo-color-surface, var(--mantine-color-default));
+  box-shadow: var(--mantine-shadow-sm);
+}
+
+.topbar {
+  height: 52px;
+  padding-inline: var(--mantine-spacing-md);
+  border-bottom: 1px solid var(--mantine-color-default-border);
+}
+
+.body {
+  display: grid;
+  gap: var(--mantine-spacing-md);
+  padding: var(--mantine-spacing-md);
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--mantine-spacing-sm);
+}
+
+.metricCard,
+.visitors {
+  border: 1px solid var(--mantine-color-default-border);
+  box-shadow: none;
+}
+
+.metricValue {
+  margin-top: 4px;
+  font-size: 1.45rem;
+  line-height: 1.1;
+}
+
+.change,
+.pill,
+.number {
+  width: max-content;
+  padding: 2px 7px;
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-sm);
+}
+
+.visitors {
+  min-height: 265px;
+}
+
+.periods {
+  overflow: hidden;
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-sm);
+}
+
+.periods button {
+  border-radius: 0;
+}
+
+.chart {
+  height: 190px;
+  margin-top: var(--mantine-spacing-md);
+  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 44px, var(--mantine-color-default-border) 45px);
+}
+
+.chart svg {
+  width: 100%;
+  height: 100%;
+}
+
+.tableToolbar {
+  gap: var(--mantine-spacing-sm);
+}
+
+.viewTabs {
+  padding: 2px;
+  border-radius: var(--mantine-radius-sm);
+  background: var(--mantine-color-default-hover);
+}
+
+.table {
+  overflow: hidden;
+  overflow-x: auto;
+  border-radius: var(--mantine-radius-md);
+}
+
+.tableRow {
+  display: grid;
+  grid-template-columns: 24px minmax(220px, 2fr) minmax(130px, 1fr) 72px 72px minmax(120px, 1fr) 28px;
+  min-height: 42px;
+  align-items: center;
+  gap: var(--mantine-spacing-xs);
+  padding-inline: var(--mantine-spacing-sm);
+  border-bottom: 1px solid var(--mantine-color-default-border);
+  min-width: 760px;
+}
+
+.tableRow:last-child {
+  border-bottom: 0;
+}
+
+.tableHead {
+  min-height: 36px;
+  background: var(--mantine-primary-color-light);
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 600;
+}
+
+.number {
+  min-width: 48px;
+  text-align: right;
+}
+
+.pill {
+  color: var(--mantine-color-dimmed);
+}
+
+@media (max-width: 70em) {
+  .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 60em) {
+  .dashboard {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .content {
+    margin: var(--mantine-spacing-xs);
+  }
+}
+
+@media (max-width: 48em) {
+  .metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .tableToolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .viewTabs {
+    overflow-x: auto;
+  }
+
+  .chart {
+    height: 150px;
+  }
+}

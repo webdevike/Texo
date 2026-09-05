@@ -1,0 +1,62 @@
+.viewport {
+  width: 100%;
+  overflow: auto;
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-md);
+}
+
+.table {
+  min-width: 760px;
+  background: var(--texo-color-card);
+}
+
+.table th {
+  height: var(--texo-table-row-height);
+  background: var(--texo-table-header-background);
+  color: var(--mantine-color-dimmed);
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.table td {
+  height: var(--texo-table-row-height);
+  white-space: nowrap;
+}
+
+.table[data-borders='horizontal'] tr > * {
+  border-bottom: 1px solid var(--mantine-color-default-border);
+}
+
+.table[data-borders='grid'] tr > * {
+  border-right: 1px solid var(--mantine-color-default-border);
+  border-bottom: 1px solid var(--mantine-color-default-border);
+}
+
+.table[data-borders='none'] tr > * {
+  border: 0;
+}
+
+.table[data-hover] tbody tr:hover,
+.table tbody tr[data-selected] {
+  background: var(--mantine-color-default-hover);
+}
+
+.table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.table[data-striped] tbody tr:nth-child(even) {
+  background: var(--texo-color-muted);
+}
+
+.table[data-sticky] thead {
+  position: sticky;
+  z-index: 1;
+  top: 0;
+}
+
+.selectionCell {
+  width: 42px;
+  padding-inline: var(--mantine-spacing-sm);
+}

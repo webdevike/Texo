@@ -1,0 +1,60 @@
+.grid {
+  columns: 4 260px;
+  column-gap: var(--mantine-spacing-md);
+}
+
+.grid > * {
+  width: 100%;
+  margin-bottom: var(--mantine-spacing-md);
+  break-inside: avoid;
+}
+
+.card {
+  border: 1px solid var(--mantine-color-default-border);
+}
+
+.chart {
+  width: 100%;
+  height: 96px;
+  color: var(--mantine-primary-color-filled);
+}
+
+
+.calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  text-align: center;
+}
+
+.goalBars {
+  height: 88px;
+  display: flex;
+  align-items: end;
+  gap: 8px;
+}
+
+.goalBar {
+  flex: 1;
+  min-width: 4px;
+  border-radius: var(--mantine-radius-xs) var(--mantine-radius-xs) 0 0;
+  background: var(--mantine-primary-color-filled);
+}
+
+.metricValue {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+@media (max-width: 75em) {
+  .grid {
+    columns: 2 280px;
+  }
+}
+
+@media (max-width: 48em) {
+  .grid {
+    columns: 1;
+  }
+}

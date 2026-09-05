@@ -1,0 +1,25 @@
+.card {
+  background: var(--texo-color-card);
+  box-shadow: var(--texo-card-shadow);
+}
+
+.input {
+  background: var(--texo-color-input);
+  border-color: var(--mantine-color-default-border);
+  box-shadow: var(--texo-control-shadow);
+}
+
+.checkboxInput {
+  background: var(--texo-color-input);
+  border-color: var(--mantine-color-default-border);
+  box-shadow: var(--texo-control-shadow);
+}
+
+.checkboxInput:checked {
+  background: var(--mantine-primary-color-filled);
+}
+
+.popover {
+  background: var(--texo-color-popover);
+  border-color: var(--mantine-color-default-border);
+}

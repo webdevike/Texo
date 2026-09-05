@@ -1,0 +1,69 @@
+.properties :global(.mantine-InputWrapper-root) {
+  display: grid;
+  grid-template-columns: minmax(88px, 112px) minmax(0, 1fr);
+  column-gap: var(--mantine-spacing-sm);
+  align-items: center;
+}
+
+.properties :global(.mantine-InputWrapper-label) {
+  grid-column: 1;
+  margin: 0;
+  color: var(--mantine-color-dimmed);
+  font-size: var(--mantine-font-size-sm);
+  line-height: 1.2;
+}
+
+.properties :global(.mantine-Input-wrapper) {
+  grid-column: 2;
+  grid-row: 1;
+  width: 100%;
+}
+
+.properties :global(.mantine-InputWrapper-description),
+.properties :global(.mantine-InputWrapper-error) {
+  grid-column: 2;
+}
+
+
+.properties
+  :global(.mantine-InputWrapper-root:not(:has(.mantine-InputWrapper-label)))
+  :global(.mantine-Input-wrapper) {
+  grid-column: 1 / -1;
+}
+.properties :global(.mantine-Switch-root) {
+  display: grid;
+  grid-template-columns: minmax(88px, 112px) minmax(0, 1fr);
+  column-gap: var(--mantine-spacing-sm);
+  align-items: center;
+}
+
+.properties :global(.mantine-Switch-labelWrapper) {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.properties :global(.mantine-Switch-body) {
+  display: contents;
+}
+
+.properties :global(.mantine-Switch-track) {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+@media (max-width: 22em) {
+  .properties :global(.mantine-InputWrapper-root),
+  .properties :global(.mantine-Switch-root) {
+    grid-template-columns: 1fr;
+    row-gap: 6px;
+  }
+
+  .properties :global(.mantine-Input-wrapper),
+  .properties :global(.mantine-InputWrapper-description),
+  .properties :global(.mantine-InputWrapper-error),
+  .properties :global(.mantine-Switch-track),
+  .properties :global(.mantine-Switch-labelWrapper) {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}

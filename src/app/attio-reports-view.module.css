@@ -1,0 +1,63 @@
+.root {
+  min-width: 0;
+  padding-bottom: var(--mantine-spacing-md);
+}
+
+.viewHeader,
+.toolbar,
+.filters {
+  padding-inline: var(--mantine-spacing-sm);
+}
+
+.viewHeader {
+  min-height: 48px;
+  border-bottom: 1px solid var(--mantine-color-default-border);
+}
+
+.toolbar {
+  min-height: 48px;
+  border-bottom: 1px solid var(--mantine-color-default-border);
+}
+
+.filters {
+  flex-wrap: wrap;
+}
+
+.companyIcon {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  place-items: center;
+  border-radius: var(--mantine-radius-xs);
+  background: var(--mantine-color-text);
+  color: var(--mantine-color-body);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.badge {
+  display: inline-flex;
+  width: max-content;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-sm);
+  background: var(--texo-color-muted);
+}
+
+.badge[data-tone='link'] { color: var(--mantine-color-blue-6); }
+.badge[data-tone='violet'] { background: var(--mantine-color-violet-light); color: var(--mantine-color-violet-light-color); }
+.badge[data-tone='green'] { background: var(--mantine-color-green-light); color: var(--mantine-color-green-light-color); }
+.badge[data-tone='blue'] { background: var(--mantine-color-blue-light); color: var(--mantine-color-blue-light-color); }
+.badge[data-tone='orange'] { background: var(--mantine-color-orange-light); color: var(--mantine-color-orange-light-color); }
+.badge[data-tone='cyan'] { background: var(--mantine-color-cyan-light); color: var(--mantine-color-cyan-light-color); }
+.badge[data-tone='thinking'] { border-color: transparent; background: transparent; color: var(--mantine-color-dimmed); }
+
+@media (max-width: 48em) {
+  .toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
