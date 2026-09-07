@@ -9,6 +9,8 @@ import {
     type BadgeProps,
     Code,
     type CodeProps,
+    Collapse,
+    type CollapseProps,
     Box,
     type BoxProps,
     Button,
@@ -37,6 +39,8 @@ import {
     type InputBaseProps,
     NavLink,
     type NavLinkProps,
+    NumberInput,
+    type NumberInputProps,
     Select,
     type SelectProps,
     Scroller,
@@ -73,6 +77,7 @@ export const BaseActionIcon = ActionIcon;
 export const BaseAppShell = AppShell;
 export const BaseBadge = Badge;
 export const BaseCode = Code;
+export const BaseCollapse = Collapse;
 export const BaseBox = Box;
 export const BaseCodeHighlight = CodeHighlight;
 export const BaseCombobox = Combobox;
@@ -87,6 +92,7 @@ export const BaseGroup = Group;
 export const BaseInputBase = InputBase;
 export const BaseMenu = Menu;
 export const BaseNavLink = NavLink;
+export const BaseNumberInput = NumberInput;
 export const BaseSelect = Select;
 export const BaseScroller = Scroller;
 export const BaseStack = Stack;
@@ -106,6 +112,8 @@ export type BaseAccordionProps = AccordionProps;
 export type BaseAppShellProps = AppShellProps;
 export type BaseBadgeProps = BadgeProps;
 export type BaseCodeProps = CodeProps;
+export type BaseCollapseProps = CollapseProps;
+export type BaseNumberInputProps = NumberInputProps;
 export type BaseCodeHighlightProps = CodeHighlightProps;
 export type BaseColorInputProps = ColorInputProps;
 export type BaseBoxProps = BoxProps;

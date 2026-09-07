@@ -1,0 +1,115 @@
+.root {
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-md);
+  background: var(--texo-color-card, var(--mantine-color-body));
+  overflow: hidden;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  position: relative;
+  border-bottom: 1px solid var(--mantine-color-default-border);
+  background: var(--texo-color-card, var(--mantine-color-body));
+}
+
+.list[data-depth='0'] > .row:last-of-type {
+  border-bottom: 0;
+}
+
+.row[data-dragging] {
+  z-index: 2;
+  box-shadow: var(--mantine-shadow-md);
+}
+
+.row[data-open] > .rowMain {
+  background: var(--texo-color-muted, var(--mantine-color-gray-0));
+}
+
+.rowMain {
+  min-height: 56px;
+  padding-inline: var(--mantine-spacing-md);
+}
+
+.handle {
+  cursor: grab;
+  color: var(--mantine-color-dimmed);
+  touch-action: none;
+}
+
+.handle:active {
+  cursor: grabbing;
+}
+
+.kind {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 28px;
+  border-radius: var(--mantine-radius-sm);
+  flex: none;
+}
+
+.kind[data-color='green'] { color: var(--mantine-color-green-7); background: var(--mantine-color-green-light); }
+.kind[data-color='red'] { color: var(--mantine-color-red-7); background: var(--mantine-color-red-light); }
+.kind[data-color='yellow'] { color: var(--mantine-color-yellow-8); background: var(--mantine-color-yellow-light); }
+.kind[data-color='grape'] { color: var(--mantine-color-grape-7); background: var(--mantine-color-grape-light); }
+.kind[data-color='orange'] { color: var(--mantine-color-orange-7); background: var(--mantine-color-orange-light); }
+.kind[data-color='indigo'] { color: var(--mantine-color-indigo-7); background: var(--mantine-color-indigo-light); }
+.kind[data-color='gray'] { color: var(--mantine-color-gray-7); background: var(--mantine-color-gray-light); }
+
+.label {
+  flex: none;
+}
+
+.description {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trailing {
+  flex: none;
+}
+
+.editor {
+  padding: var(--mantine-spacing-sm) var(--mantine-spacing-md) var(--mantine-spacing-md) 72px;
+  border-top: 1px solid var(--mantine-color-default-border);
+}
+
+.children {
+  position: relative;
+  padding-left: 40px;
+}
+
+.children::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 24px;
+  left: 28px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--mantine-color-default-border);
+}
+
+.children .rowMain::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 28px;
+  width: 12px;
+  height: 2px;
+  background: var(--mantine-color-default-border);
+}
+
+.add {
+  align-self: flex-start;
+  margin: var(--mantine-spacing-xs) var(--mantine-spacing-sm);
+}

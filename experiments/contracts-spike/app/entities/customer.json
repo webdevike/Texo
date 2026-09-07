@@ -3,6 +3,11 @@
   "title": "name",
   "fields": [
     {
+      "name": "seats",
+      "kind": "number",
+      "default": 3
+    },
+    {
       "name": "name",
       "kind": "string",
       "min": 1
@@ -20,11 +25,6 @@
         "pro",
         "enterprise"
       ]
-    },
-    {
-      "name": "seats",
-      "kind": "number",
-      "default": 3
     }
   ]
 }
