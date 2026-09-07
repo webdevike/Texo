@@ -4,7 +4,7 @@
 import { describe, expect, test } from "bun:test";
 import { z } from "zod";
 import { defineEntity } from "./entity";
-import { type Store, StoreNotFoundError, StoreValidationError } from "./store";
+import { type Store, StoreNotFoundError, StoreSchemaError, StoreValidationError } from "./store";
 
 const task = defineEntity({
   name: "conformance_task",
@@ -104,6 +104,38 @@ export function runStoreConformance(label: string, make: () => Store | Promise<S
       const row = await store.create(task, { title: "a", priority: 1, status: "todo" });
       expect(row.note).toBeUndefined();
       expect((await store.get(task, row.id))!.note).toBeUndefined();
+    });
+    // Schema evolution: the same entity name with a changed shape against the same store.
+    // A memory store passes these trivially; a persistent one must reconcile.
+    const v1 = defineEntity({ name: "conformance_evolve", title: "title", fields: { title: z.string() } });
+
+    test("migrate is idempotent and additive optional/defaulted fields keep existing rows readable", async () => {
+      const store = await make();
+      await store.migrate(v1);
+      await store.migrate(v1);
+      const row = await store.create(v1, { title: "old" });
+      const v2 = defineEntity({
+        name: "conformance_evolve",
+        title: "title",
+        fields: { title: z.string(), note: z.string().optional(), flag: z.boolean().default(true) },
+      });
+      await store.migrate(v2);
+      const rows = await store.list(v2);
+      expect(rows).toHaveLength(1);
+      expect(rows[0]!.id).toBe(row.id);
+      expect(rows[0]!.title).toBe("old");
+      expect(rows[0]!.note).toBeUndefined();
+      const created = await store.create(v2, { title: "new", note: "n" });
+      expect(created.flag).toBe(true);
+      expect(created.note).toBe("n");
+    });
+
+    test("migrate rejects a new required field without a default when rows exist, with StoreSchemaError", async () => {
+      const store = await make();
+      await store.migrate(v1);
+      await store.create(v1, { title: "old" });
+      const v2 = defineEntity({ name: "conformance_evolve", title: "title", fields: { title: z.string(), must: z.number() } });
+      await expect(store.migrate(v2)).rejects.toBeInstanceOf(StoreSchemaError);
     });
   });
 }

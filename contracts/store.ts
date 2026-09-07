@@ -9,6 +9,12 @@ export interface ListQuery<E extends Entity> {
 }
 
 export interface Store {
+  /**
+   * Reconcile storage with the entity's current shape. Additive changes (new optional field,
+   * new field with a default) must succeed and existing rows must keep reading. Called by the
+   * host once per entity at startup; adapters may also call it lazily. Idempotent.
+   */
+  migrate(entity: Entity): Promise<void>;
   list<E extends Entity>(entity: E, query?: ListQuery<E>): Promise<Row<E>[]>;
   get<E extends Entity>(entity: E, id: string): Promise<Row<E> | undefined>;
   /** Validates against `entity.schema`; rejects with StoreValidationError on bad input. */
@@ -17,6 +23,14 @@ export interface Store {
   update<E extends Entity>(entity: E, id: string, patch: Partial<Input<E>>): Promise<Row<E>>;
   /** Idempotent: removing an unknown id resolves. */
   remove<E extends Entity>(entity: E, id: string): Promise<void>;
+}
+
+/** Thrown when storage cannot be reconciled with the entity's shape (destructive or unsupported change). */
+export class StoreSchemaError extends Error {
+  constructor(entity: string, detail: string) {
+    super(`${entity}: ${detail}`);
+    this.name = "StoreSchemaError";
+  }
 }
 
 export interface ValidationIssue {

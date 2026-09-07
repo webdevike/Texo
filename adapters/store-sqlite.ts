@@ -1,7 +1,7 @@
 // Reference Store adapter: bun:sqlite. Table per entity, columns derived from entity.fields.
 import { Database } from "bun:sqlite";
 import type { Entity, FieldMeta, Input, Row } from "../contracts/entity";
-import { type ListQuery, type Store, StoreNotFoundError, validate } from "../contracts/store";
+import { type ListQuery, type Store, StoreNotFoundError, StoreSchemaError, validate } from "../contracts/store";
 
 const columnType: Record<FieldMeta["kind"], string> = { string: "TEXT", number: "REAL", boolean: "INTEGER", enum: "TEXT" };
 
@@ -24,11 +24,27 @@ export function createSqliteStore(path = ":memory:"): Store {
   const db = new Database(path);
   const ready = new Set<string>();
 
+  const signature = (entity: Entity) => `${entity.name}:${entity.fields.map((f) => `${f.name}/${f.kind}/${f.optional ? "o" : "r"}`).join(",")}`;
+
   function ensure(entity: Entity) {
-    if (ready.has(entity.name)) return;
+    if (ready.has(signature(entity))) return;
     const cols = entity.fields.map((f) => `"${f.name}" ${columnType[f.kind]}`).join(", ");
     db.run(`CREATE TABLE IF NOT EXISTS "${entity.name}" (id TEXT PRIMARY KEY${cols ? `, ${cols}` : ""})`);
-    ready.add(entity.name);
+    const existing = (db.prepare(`PRAGMA table_info("${entity.name}")`).all() as { name: string; type: string }[]);
+    const byName = Object.fromEntries(existing.map((c) => [c.name, c.type]));
+    for (const f of entity.fields) {
+      const have = byName[f.name];
+      if (have === undefined) {
+        if (!f.optional && f.defaultValue === undefined) {
+          throw new StoreSchemaError(entity.name, `new required field "${f.name}" has no default; existing rows cannot satisfy it`);
+        }
+        db.run(`ALTER TABLE "${entity.name}" ADD COLUMN "${f.name}" ${columnType[f.kind]}`);
+      } else if (have !== columnType[f.kind]) {
+        throw new StoreSchemaError(entity.name, `field "${f.name}" is ${have} in storage but the entity declares ${f.kind} (${columnType[f.kind]}); retyping is not automatic`);
+      }
+    }
+    // Columns no longer in the entity are left in place: reads ignore them, nothing is destroyed.
+    ready.add(signature(entity));
   }
 
   function fieldOf(entity: Entity, name: string): FieldMeta {
@@ -38,6 +54,10 @@ export function createSqliteStore(path = ":memory:"): Store {
   }
 
   return {
+    async migrate(entity) {
+      ensure(entity);
+    },
+
     async list<E extends Entity>(entity: E, query: ListQuery<E> = {}) {
       ensure(entity);
       const clauses: string[] = [];
@@ -49,13 +69,13 @@ export function createSqliteStore(path = ":memory:"): Store {
       }
       const where = clauses.length ? ` WHERE ${clauses.join(" AND ")}` : "";
       const order = query.orderBy ? ` ORDER BY "${query.orderBy.field}" ${query.orderBy.direction === "desc" ? "DESC" : "ASC"}` : "";
-      const rows = db.query(`SELECT * FROM "${entity.name}"${where}${order}`).all(...(params as never[])) as Record<string, unknown>[];
+      const rows = db.prepare(`SELECT * FROM "${entity.name}"${where}${order}`).all(...(params as never[])) as Record<string, unknown>[];
       return rows.map((r) => fromDb(entity, r));
     },
 
     async get<E extends Entity>(entity: E, id: string) {
       ensure(entity);
-      const raw = db.query(`SELECT * FROM "${entity.name}" WHERE id = ?`).get(id) as Record<string, unknown> | null;
+      const raw = db.prepare(`SELECT * FROM "${entity.name}" WHERE id = ?`).get(id) as Record<string, unknown> | null;
       return raw ? fromDb(entity, raw) : undefined;
     },
 

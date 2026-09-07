@@ -6,7 +6,7 @@ import { type Store, StoreNotFoundError, StoreValidationError } from "../contrac
 
 const ValidationBody = z.object({ issues: z.array(z.object({ path: z.array(z.union([z.string(), z.number()])), message: z.string() })) });
 
-const METHODS = ["list", "get", "create", "update", "remove"] as const;
+const METHODS = ["migrate", "list", "get", "create", "update", "remove"] as const;
 type Method = (typeof METHODS)[number];
 
 export function storeHandler(store: Store, entities: Record<string, Entity>) {
@@ -41,6 +41,7 @@ export function createHttpStore(baseUrl: string): Store {
     return body === null ? undefined : body;
   }
   return {
+    migrate: (entity) => call(entity, "migrate", []) as never,
     list: (entity, query) => call(entity, "list", [query ?? {}]) as never,
     get: (entity, id) => call(entity, "get", [id]) as never,
     create: (entity, input) => call(entity, "create", [input]) as never,

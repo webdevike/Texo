@@ -10,5 +10,6 @@ export const issue = defineEntity({
     priority: z.number().int().min(0).max(4).default(0),
     done: z.boolean().default(false),
     notes: z.string().optional(),
+    dueDate: z.string().optional(),
   },
 });

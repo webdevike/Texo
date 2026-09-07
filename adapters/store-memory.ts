@@ -1,6 +1,6 @@
 // Second Store adapter: in-memory Map. Exists to prove the contract, not for use.
 import type { Entity, Input, Row } from "../contracts/entity";
-import { type ListQuery, type Store, StoreNotFoundError, validate } from "../contracts/store";
+import { type ListQuery, type Store, StoreNotFoundError, StoreSchemaError, validate } from "../contracts/store";
 
 export function createMemoryStore(): Store {
   const tables = new Map<string, Map<string, Record<string, unknown>>>();
@@ -12,6 +12,15 @@ export function createMemoryStore(): Store {
   const clone = <E extends Entity>(row: Record<string, unknown>) => ({ ...row }) as Row<E>;
 
   return {
+    async migrate(entity) {
+      // No storage shape to reconcile, but held rows must still satisfy the new schema.
+      for (const row of table(entity).values()) {
+        const { id, ...data } = row;
+        const result = entity.schema.safeParse(data);
+        if (!result.success) throw new StoreSchemaError(entity.name, `existing row ${id} does not satisfy the new shape: ${result.error.issues[0]?.message}`);
+        Object.assign(row, result.data); // apply new defaults so reads reflect the schema
+      }
+    },
     async list<E extends Entity>(entity: E, query: ListQuery<E> = {}) {
       let rows = [...table(entity).values()];
       for (const [k, v] of Object.entries(query.where ?? {})) {
