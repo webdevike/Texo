@@ -5,7 +5,9 @@ import {
   IconCheck,
   IconChevronDown,
   IconDotsVertical,
+  IconLayoutGrid,
   IconMoon,
+  IconPalette,
   IconSun,
 } from '@tabler/icons-react';
 import * as BaseComponents from '@texo/ui';
@@ -57,6 +59,7 @@ const {
   BaseTextInput,
   BaseTextarea,
   BaseTitle,
+  BaseTooltip,
   BaseTree,
 } = BaseComponents;
 const {
@@ -136,6 +139,8 @@ function previewCode(name: string) {
     BaseTextInput:
       '<BaseTextInput label="Name" placeholder="Enter your name" />',
     BaseTitle: '<BaseTitle order={1}>Title</BaseTitle>',
+    BaseTooltip:
+      '<BaseTooltip label="Tooltip"><BaseButton>Hover me</BaseButton></BaseTooltip>',
     BaseTree: '<BaseTree data={treeData} />',
   };
 
@@ -263,6 +268,12 @@ function ComponentPreview({
       return <BaseTextInput label="Name" placeholder="Enter your name" />;
     case 'BaseTitle':
       return <BaseTitle order={1}>Title</BaseTitle>;
+    case 'BaseTooltip':
+      return (
+        <BaseTooltip label="Tooltip">
+          <BaseButton>Hover me</BaseButton>
+        </BaseTooltip>
+      );
     case 'BaseTree':
       return <BaseTree data={treeData} />;
     default:
@@ -514,13 +525,47 @@ export function App() {
     </>
   );
 
+  const pagesList = (
+    <BaseStack gap={2}>
+      {navigationItems.map((item) => (
+        <BaseNavLink
+          active={pathname === item.path}
+          key={item.path}
+          label={item.label}
+          onClick={() => navigate(item.path)}
+        />
+      ))}
+    </BaseStack>
+  );
+
+  const rail = [
+    {
+      body: themeSettings,
+      header: themePicker,
+      icon: <IconPalette size={18} />,
+      id: 'theme',
+      label: 'Theme',
+      subheader: inspectorTabs,
+    },
+    {
+      body: pagesList,
+      header: (
+        <BaseText fw={600} px="sm" size="sm">
+          Pages
+        </BaseText>
+      ),
+      icon: <IconLayoutGrid size={18} />,
+      id: 'pages',
+      label: 'Pages',
+    },
+  ];
+
   return (
     <TexoAppShell
       actions={actions}
-      controls={themeSettings}
-      inspectorTabs={inspectorTabs}
+      defaultRail="theme"
       previewTabs={previewTabs}
-      themePicker={themePicker}
+      rail={rail}
     >
       <Routes>
         <Route path="/" element={<Navigate to="/theme" replace />} />

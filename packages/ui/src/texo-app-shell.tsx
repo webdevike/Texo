@@ -5,36 +5,52 @@ import {
   type ReactNode,
 } from 'react';
 
-import { BaseBox } from './components';
+import { BaseActionIcon, BaseBox, BaseTooltip } from './components';
 import classes from './texo-app-shell.module.css';
+
+const RAIL_WIDTH = 48;
+
+export interface TexoRailItem {
+  /** Rail body: scrollable content of the panel this icon opens. */
+  body: ReactNode;
+  /** Optional 56px header row, aligned with the workspace actions row. */
+  header?: ReactNode;
+  icon: ReactNode;
+  id: string;
+  label: string;
+  /** Optional 48px row under the header, aligned with the preview tabs row. */
+  subheader?: ReactNode;
+}
 
 export interface TexoAppShellProps {
   actions: ReactNode;
   children: ReactNode;
-  controls: ReactNode;
-  inspectorTabs: ReactNode;
+  /** Rail item open on first render; `null` starts with the panel collapsed. */
+  defaultRail?: string | null;
   previewTabs: ReactNode;
-  themePicker: ReactNode;
+  rail: TexoRailItem[];
 }
 
 export function TexoAppShell({
   actions,
   children,
-  controls,
-  inspectorTabs,
+  defaultRail = null,
   previewTabs,
-  themePicker,
+  rail,
 }: TexoAppShellProps) {
-  const [inspectorWidth, setInspectorWidth] = useState(320);
+  const [activeRail, setActiveRail] = useState<string | null>(defaultRail);
+  const [panelWidth, setPanelWidth] = useState(320);
+
+  const active = rail.find((item) => item.id === activeRail) ?? null;
 
   const startResize = (event: ReactPointerEvent<HTMLDivElement>) => {
     event.preventDefault();
 
     const startX = event.clientX;
-    const startWidth = inspectorWidth;
+    const startWidth = panelWidth;
 
     const resize = (pointerEvent: PointerEvent) => {
-      setInspectorWidth(
+      setPanelWidth(
         Math.min(750, Math.max(300, startWidth + pointerEvent.clientX - startX)),
       );
     };
@@ -49,23 +65,49 @@ export function TexoAppShell({
   };
 
   const variables = {
-    '--texo-inspector-width': `${inspectorWidth}px`,
+    '--texo-rail-width': `${RAIL_WIDTH}px`,
+    '--texo-panel-width': active ? `${panelWidth}px` : '0px',
   } as CSSProperties;
 
   return (
-    <BaseBox className={classes.root} style={variables}>
-      <BaseBox component="aside" className={classes.inspector}>
-        <BaseBox className={classes.themePicker}>{themePicker}</BaseBox>
-        <BaseBox className={classes.inspectorTabs}>{inspectorTabs}</BaseBox>
-        <BaseBox className={classes.controls}>{controls}</BaseBox>
+    <BaseBox className={classes.root} data-panel-open={active ? 'true' : undefined} style={variables}>
+      <BaseBox component="nav" aria-label="Sidebar" className={classes.rail}>
+        {rail.map((item) => {
+          const selected = item.id === activeRail;
+          return (
+            <BaseTooltip key={item.id} label={item.label} position="right" withArrow>
+              <BaseActionIcon
+                aria-label={item.label}
+                aria-pressed={selected}
+                className={classes.railButton}
+                data-active={selected || undefined}
+                onClick={() => setActiveRail(selected ? null : item.id)}
+                size="lg"
+                variant={selected ? 'light' : 'subtle'}
+              >
+                {item.icon}
+              </BaseActionIcon>
+            </BaseTooltip>
+          );
+        })}
       </BaseBox>
 
-      <BaseBox
-        aria-label="Resize properties panel"
-        className={classes.resizer}
-        onPointerDown={startResize}
-        role="separator"
-      />
+      {active ? (
+        <>
+          <BaseBox component="aside" aria-label={active.label} className={classes.panel}>
+            <BaseBox className={classes.panelHeader}>{active.header}</BaseBox>
+            <BaseBox className={classes.panelSubheader}>{active.subheader}</BaseBox>
+            <BaseBox className={classes.panelBody}>{active.body}</BaseBox>
+          </BaseBox>
+
+          <BaseBox
+            aria-label="Resize panel"
+            className={classes.resizer}
+            onPointerDown={startResize}
+            role="separator"
+          />
+        </>
+      ) : null}
 
       <BaseBox className={classes.workspace}>
         <BaseBox className={classes.actions}>{actions}</BaseBox>

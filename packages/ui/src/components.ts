@@ -55,6 +55,8 @@ import {
     type TextareaProps,
     Title,
     type TitleProps,
+    Tooltip,
+    type TooltipProps,
     Tree,
     type TreeNodeData,
     type TreeProps,
@@ -90,6 +92,7 @@ export const BaseText = Text;
 export const BaseTextInput = TextInput;
 export const BaseTextarea = Textarea;
 export const BaseTitle = Title;
+export const BaseTooltip = Tooltip;
 export const BaseTree = Tree;
 
 export type BaseActionIconProps = ActionIconProps;
@@ -119,6 +122,7 @@ export type BaseTextProps = TextProps;
 export type BaseTextInputProps = TextInputProps;
 export type BaseScrollAreaProps = ScrollAreaProps;
 export type BaseTitleProps = TitleProps;
+export type BaseTooltipProps = TooltipProps;
 export type BaseTextareaProps = TextareaProps;
 export type BaseTreeNodeData = TreeNodeData;
 export type BaseTreeProps = TreeProps;
