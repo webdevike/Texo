@@ -16,7 +16,6 @@ and what happened. A FAIL is the goal: it names a contract hole before the real 
 | P6 | Settings (theme) can dogfood the Store contract | Theme is a row of `_setting` (system entity); change color/radius/scheme/name, reload admin, open app | PASS: persisted through `store.create/update`, survived reload, app rendered dark + new primary + new name | Framework-owned entities are ordinary entities with a `_` prefix, hidden from Content. Spec name regex had to allow the prefix |
 | P6a | Admin UI is driveable by an agent | Drove the builder headlessly | Two Mantine traps, both known classes: controlled inputs need the native value setter + `input` event, SegmentedControl radios are visually hidden (click the label). NumberInput string emit (P1) again | UI adapter concern, not contract. Worth a `ui/testing.ts` helper before the blind-agent probe |
 | P4 | FieldMeta's 4 kinds cover a real app | Hostile entity: relation, date, string[], json, long text | pending | |
-| P5 | Admin needs zero entity/adapter-specific code | Build admin from a manifest only; add entity + swap store, admin unchanged | pending | |
 | P6 | Settings (theme) can dogfood the Store contract | Persist theme via `setting` entity, reload, swap store | pending | |
 | P7 | Store contract does not leak sqlite | Blind subagent writes a third adapter with different semantics (async, eventually consistent) from contract + suite + reference only | pending | |
 | P8 | UI never needs capabilities the Store hides | Table at 10k rows, search, pagination | pending | |
