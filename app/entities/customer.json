@@ -1,0 +1,30 @@
+{
+  "name": "customer",
+  "title": "name",
+  "fields": [
+    {
+      "name": "name",
+      "kind": "string",
+      "min": 1
+    },
+    {
+      "name": "email",
+      "kind": "string",
+      "optional": true
+    },
+    {
+      "name": "tier",
+      "kind": "enum",
+      "options": [
+        "free",
+        "pro",
+        "enterprise"
+      ]
+    },
+    {
+      "name": "seats",
+      "kind": "number",
+      "default": 3
+    }
+  ]
+}

@@ -1,20 +1,20 @@
-// One page per entity: table + create/edit modal. Talks to the Store contract only.
+// One page per entity: table + create/edit modal. Talks to the ClientStore contract only.
 import { Button, Group, Modal, Stack, Title } from "@mantine/core";
 import { useCallback, useEffect, useState } from "react";
 import type { Entity, Row } from "../contracts/entity";
-import type { Store } from "../contracts/store";
+import type { ClientStore } from "../contracts/store";
 import { EntityForm } from "./entity-form";
 import { EntityTable } from "./entity-table";
 
 type Sort = { field: string; direction: "asc" | "desc" };
 
-export function EntityPage<E extends Entity>({ entity, store }: { entity: E; store: Store }) {
-  const [rows, setRows] = useState<Row<E>[]>([]);
+export function EntityPage({ entity, store }: { entity: Entity; store: ClientStore }) {
+  const [rows, setRows] = useState<Row[]>([]);
   const [sort, setSort] = useState<Sort | undefined>();
-  const [editing, setEditing] = useState<Row<E> | "new" | undefined>();
+  const [editing, setEditing] = useState<Row | "new" | undefined>();
 
   const refresh = useCallback(async () => {
-    setRows(await store.list(entity, sort ? { orderBy: { field: sort.field as keyof Row<E> & string, direction: sort.direction } } : {}));
+    setRows(await store.list(entity, sort ? { orderBy: sort } : {}));
   }, [entity, store, sort]);
 
   useEffect(() => { void refresh(); }, [refresh]);

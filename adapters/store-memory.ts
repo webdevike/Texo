@@ -3,15 +3,22 @@ import type { Entity, Input, Row } from "../contracts/entity";
 import { type ListQuery, type Store, StoreNotFoundError, StoreSchemaError, validate } from "../contracts/store";
 
 export function createMemoryStore(): Store {
-  const tables = new Map<string, Map<string, Record<string, unknown>>>();
+  const tables = new Map<string, Map<string, Row>>();
   const table = (entity: Entity) => {
     let t = tables.get(entity.name);
     if (!t) tables.set(entity.name, (t = new Map()));
     return t;
   };
-  const clone = <E extends Entity>(row: Record<string, unknown>) => ({ ...row }) as Row<E>;
+  // Reads return only declared fields: a removed field's stale value never leaks (contract).
+  const project = (entity: Entity, row: Row): Row => {
+    const out: Row = { id: row.id };
+    for (const f of entity.fields) if (row[f.name] !== undefined) out[f.name] = row[f.name];
+    return out;
+  };
 
   return {
+    kind: "memory",
+
     async migrate(entity) {
       // No storage shape to reconcile, but held rows must still satisfy the new schema.
       for (const row of table(entity).values()) {
@@ -21,7 +28,8 @@ export function createMemoryStore(): Store {
         Object.assign(row, result.data); // apply new defaults so reads reflect the schema
       }
     },
-    async list<E extends Entity>(entity: E, query: ListQuery<E> = {}) {
+
+    async list(entity, query: ListQuery = {}) {
       let rows = [...table(entity).values()];
       for (const [k, v] of Object.entries(query.where ?? {})) {
         if (v !== undefined) rows = rows.filter((r) => r[k] === v);
@@ -29,27 +37,31 @@ export function createMemoryStore(): Store {
       if (query.orderBy) {
         const { field, direction } = query.orderBy;
         const sign = direction === "desc" ? -1 : 1;
-        rows.sort((a, b) => (a[field]! < b[field]! ? -sign : a[field]! > b[field]! ? sign : 0));
+        rows.sort((a, b) => ((a[field] as number) < (b[field] as number) ? -sign : (a[field] as number) > (b[field] as number) ? sign : 0));
       }
-      return rows.map((r) => clone<E>(r));
+      return rows.map((r) => project(entity, r));
     },
-    async get<E extends Entity>(entity: E, id: string) {
+
+    async get(entity, id) {
       const r = table(entity).get(id);
-      return r ? clone<E>(r) : undefined;
+      return r ? project(entity, r) : undefined;
     },
-    async create<E extends Entity>(entity: E, input: Input<E>) {
-      const data = validate(entity, input) as Record<string, unknown>;
-      const row = { id: crypto.randomUUID(), ...data };
+
+    async create(entity, input: Input) {
+      const data = validate(entity, input);
+      const row: Row = { id: crypto.randomUUID(), ...data };
       table(entity).set(row.id, row);
-      return clone<E>(row);
+      return project(entity, row);
     },
-    async update<E extends Entity>(entity: E, id: string, patch: Partial<Input<E>>) {
-      const data = validate(entity, patch, true) as Record<string, unknown>;
+
+    async update(entity, id, patch: Input) {
+      const data = validate(entity, patch, true);
       const existing = table(entity).get(id);
       if (!existing) throw new StoreNotFoundError(entity.name, id);
       for (const [k, v] of Object.entries(data)) if (v !== undefined) existing[k] = v;
-      return clone<E>(existing);
+      return project(entity, existing);
     },
+
     async remove(entity, id) {
       table(entity).delete(id);
     },

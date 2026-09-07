@@ -1,66 +1,100 @@
-// The one thing an app author writes. Everything else (storage, table, form) derives from it.
+// The one thing an app author (human, agent, or admin UI) writes: a serializable entity spec.
+// zod is DERIVED from it, never authored, so specs travel over the wire and live as JSON files.
 import { z } from "zod";
 
 export type FieldKind = "string" | "number" | "boolean" | "enum";
 
-export interface FieldMeta {
+interface FieldBase {
   name: string;
-  kind: FieldKind;
-  optional: boolean;
-  /** Present when kind === "enum". */
-  options?: readonly string[];
-  /** Present when the schema declares a default. */
-  defaultValue?: unknown;
+  optional?: boolean;
+}
+export type FieldSpec =
+  | (FieldBase & { kind: "string"; default?: string; min?: number; max?: number; long?: boolean })
+  | (FieldBase & { kind: "number"; default?: number; min?: number; max?: number; integer?: boolean })
+  | (FieldBase & { kind: "boolean"; default?: boolean })
+  | (FieldBase & { kind: "enum"; default?: string; options: string[] });
+
+export interface EntitySpec {
+  name: string;
+  /** Field whose value labels a row. */
+  title: string;
+  fields: FieldSpec[];
 }
 
-// Default `any`: a concrete Entity<{title: ZodString}> must be assignable to bare `Entity`
-// (ZodObject is invariant in its shape), and `Entity` is the type every contract names.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface Entity<Shape extends z.ZodRawShape = any> {
-  name: string;
-  schema: z.ZodObject<Shape>;
-  /** Field whose value labels a row (detail headers, selects). */
-  title: keyof Shape & string;
-  fields: FieldMeta[];
+export interface Entity extends EntitySpec {
+  schema: z.ZodObject<Record<string, z.ZodTypeAny>>;
 }
 
-export type Row<E extends Entity> = z.infer<E["schema"]> & { id: string };
-export type Input<E extends Entity> = z.input<E["schema"]>;
+export type Row = { id: string } & Record<string, unknown>;
+export type Input = Record<string, unknown>;
 
-/** Unwrap optional/default wrappers and read the field kind from the zod v4 def. */
-function describe(name: string, field: z.ZodTypeAny): FieldMeta {
-  let def = field._zod.def as { type: string; innerType?: z.ZodTypeAny; entries?: Record<string, string>; defaultValue?: unknown };
-  let optional = false;
-  let defaultValue: unknown;
-  while (def.type === "optional" || def.type === "default" || def.type === "nullable") {
-    if (def.type === "optional" || def.type === "nullable") optional = true;
-    if (def.type === "default") defaultValue = def.defaultValue;
-    def = def.innerType!._zod.def as typeof def;
+const NAME = /^_?[a-z][a-z0-9_]*$/;
+
+/** The spec's own validator: the admin API and the file loader both run it. */
+export const EntitySpecSchema: z.ZodType<EntitySpec> = z.object({
+  name: z.string().regex(NAME, "lowercase snake_case"),
+  title: z.string(),
+  fields: z.array(
+    z.discriminatedUnion("kind", [
+      z.object({ name: z.string().regex(NAME), kind: z.literal("string"), optional: z.boolean().optional(), default: z.string().optional(), min: z.number().optional(), max: z.number().optional(), long: z.boolean().optional() }),
+      z.object({ name: z.string().regex(NAME), kind: z.literal("number"), optional: z.boolean().optional(), default: z.number().optional(), min: z.number().optional(), max: z.number().optional(), integer: z.boolean().optional() }),
+      z.object({ name: z.string().regex(NAME), kind: z.literal("boolean"), optional: z.boolean().optional(), default: z.boolean().optional() }),
+      z.object({ name: z.string().regex(NAME), kind: z.literal("enum"), optional: z.boolean().optional(), default: z.string().optional(), options: z.array(z.string()).min(1) }),
+    ]),
+  ),
+}).superRefine((spec, ctx) => {
+  const names = spec.fields.map((f) => f.name);
+  if (names.includes("id")) ctx.addIssue({ code: "custom", message: `"id" is reserved, the store assigns it`, path: ["fields"] });
+  if (new Set(names).size !== names.length) ctx.addIssue({ code: "custom", message: "duplicate field names", path: ["fields"] });
+  if (!names.includes(spec.title)) ctx.addIssue({ code: "custom", message: `title "${spec.title}" is not a field`, path: ["title"] });
+  for (const f of spec.fields) {
+    if (f.kind === "enum" && f.default !== undefined && !f.options.includes(f.default)) {
+      ctx.addIssue({ code: "custom", message: `default "${f.default}" is not an option`, path: ["fields", f.name] });
+    }
   }
-  const kind = def.type;
-  if (kind !== "string" && kind !== "number" && kind !== "boolean" && kind !== "enum") {
-    throw new Error(`${name}: unsupported field type "${kind}" (rung 1 supports string, number, boolean, enum)`);
+});
+
+function zodFor(f: FieldSpec): z.ZodTypeAny {
+  let t: z.ZodTypeAny;
+  switch (f.kind) {
+    case "string": {
+      let s = z.string();
+      if (f.min !== undefined) s = s.min(f.min);
+      if (f.max !== undefined) s = s.max(f.max);
+      t = s;
+      break;
+    }
+    case "number": {
+      let n = z.number();
+      if (f.integer) n = n.int();
+      if (f.min !== undefined) n = n.min(f.min);
+      if (f.max !== undefined) n = n.max(f.max);
+      t = n;
+      break;
+    }
+    case "boolean":
+      t = z.boolean();
+      break;
+    case "enum":
+      t = z.enum(f.options as [string, ...string[]]);
+      break;
   }
-  return {
-    name,
-    kind,
-    optional,
-    ...(kind === "enum" ? { options: Object.values(def.entries!) } : {}),
-    ...(defaultValue !== undefined ? { defaultValue } : {}),
-  };
+  if (f.default !== undefined) t = t.default(f.default);
+  else if (f.optional) t = t.optional();
+  return t;
 }
 
-export function defineEntity<Shape extends z.ZodRawShape>(config: {
-  name: string;
-  fields: Shape;
-  title: keyof Shape & string;
-}): Entity<Shape> {
-  if ("id" in config.fields) throw new Error(`${config.name}: "id" is reserved, the store assigns it`);
-  const schema = z.object(config.fields);
-  return {
-    name: config.name,
-    schema,
-    title: config.title,
-    fields: Object.entries(config.fields).map(([name, field]) => describe(name, field as z.ZodTypeAny)),
-  };
+export function defineEntity(spec: EntitySpec): Entity {
+  const parsed = EntitySpecSchema.parse(spec);
+  return { ...parsed, schema: z.object(Object.fromEntries(parsed.fields.map((f) => [f.name, zodFor(f)]))) };
+}
+
+/** The wire/file form: everything but the derived schema. */
+export function specOf(entity: Entity): EntitySpec {
+  return { name: entity.name, title: entity.title, fields: entity.fields };
+}
+
+/** True when `f` is satisfied by existing rows that lack it (used by migrations). */
+export function fieldIsAdditive(f: FieldSpec): boolean {
+  return f.optional === true || f.default !== undefined;
 }

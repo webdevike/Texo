@@ -1,20 +1,20 @@
 // Table rendered from entity.fields. Sort by clicking a header; click a row to edit.
 import { Badge, Table, Text } from "@mantine/core";
-import type { Entity, FieldMeta, Row } from "../contracts/entity";
+import type { Entity, FieldSpec, Row } from "../contracts/entity";
 
-function Cell({ field, value }: { field: FieldMeta; value: unknown }) {
+function Cell({ field, value }: { field: FieldSpec; value: unknown }) {
   if (value === undefined || value === null) return <Text c="dimmed" size="sm">–</Text>;
   if (field.kind === "boolean") return <Badge variant="light" color={value ? "green" : "gray"}>{value ? "yes" : "no"}</Badge>;
   if (field.kind === "enum") return <Badge variant="outline">{String(value)}</Badge>;
-  return <Text size="sm">{String(value)}</Text>;
+  return <Text size="sm" lineClamp={1}>{String(value)}</Text>;
 }
 
-export function EntityTable<E extends Entity>({ entity, rows, sort, onSort, onSelect }: {
-  entity: E;
-  rows: Row<E>[];
+export function EntityTable({ entity, rows, sort, onSort, onSelect }: {
+  entity: Entity;
+  rows: Row[];
   sort?: { field: string; direction: "asc" | "desc" };
   onSort: (field: string) => void;
-  onSelect: (row: Row<E>) => void;
+  onSelect: (row: Row) => void;
 }) {
   return (
     <Table highlightOnHover withTableBorder>
@@ -34,7 +34,7 @@ export function EntityTable<E extends Entity>({ entity, rows, sort, onSort, onSe
         {rows.map((row) => (
           <Table.Tr key={row.id} style={{ cursor: "pointer" }} onClick={() => onSelect(row)}>
             {entity.fields.map((f) => (
-              <Table.Td key={f.name}><Cell field={f} value={(row as Record<string, unknown>)[f.name]} /></Table.Td>
+              <Table.Td key={f.name}><Cell field={f} value={row[f.name]} /></Table.Td>
             ))}
           </Table.Tr>
         ))}

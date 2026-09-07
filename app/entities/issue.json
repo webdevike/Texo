@@ -1,0 +1,11 @@
+{
+  "name": "issue",
+  "title": "title",
+  "fields": [
+    { "name": "title", "kind": "string", "min": 1 },
+    { "name": "status", "kind": "enum", "options": ["backlog", "todo", "in_progress", "done"], "default": "backlog" },
+    { "name": "priority", "kind": "number", "integer": true, "min": 0, "max": 4, "default": 0 },
+    { "name": "done", "kind": "boolean", "default": false },
+    { "name": "notes", "kind": "string", "optional": true, "long": true }
+  ]
+}

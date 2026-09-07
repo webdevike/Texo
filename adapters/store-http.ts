@@ -1,19 +1,20 @@
-// Transport pair: `serveStore` exposes any Store over HTTP; `createHttpStore` is a Store that
-// proxies to it. The client app never knows which adapter sits behind the server.
+// Transport pair: `storeHandler` exposes a host Store's ClientStore surface over HTTP;
+// `createHttpStore` is a ClientStore that proxies to it. The server is schema authority:
+// requests carry the entity NAME and the server resolves the current spec (P3c).
 import { z } from "zod";
 import type { Entity } from "../contracts/entity";
-import { type Store, StoreNotFoundError, StoreValidationError } from "../contracts/store";
+import { type ClientStore, StoreNotFoundError, StoreValidationError } from "../contracts/store";
 
 const ValidationBody = z.object({ issues: z.array(z.object({ path: z.array(z.union([z.string(), z.number()])), message: z.string() })) });
 
-const METHODS = ["migrate", "list", "get", "create", "update", "remove"] as const;
+const METHODS = ["list", "get", "create", "update", "remove"] as const;
 type Method = (typeof METHODS)[number];
 
-export function storeHandler(store: Store, entities: Record<string, Entity>) {
+export function storeHandler(store: ClientStore, resolve: (name: string) => Entity | undefined) {
   return async (req: Request): Promise<Response> => {
     const url = new URL(req.url);
     const [, entityName, method] = url.pathname.split("/");
-    const entity = entityName ? entities[entityName] : undefined;
+    const entity = entityName ? resolve(entityName) : undefined;
     if (!entity || !METHODS.includes(method as Method) || req.method !== "POST") return new Response("not found", { status: 404 });
     const args = (await req.json()) as unknown[];
     try {
@@ -27,7 +28,7 @@ export function storeHandler(store: Store, entities: Record<string, Entity>) {
   };
 }
 
-export function createHttpStore(baseUrl: string): Store {
+export function createHttpStore(baseUrl: string): ClientStore {
   async function call(entity: Entity, method: Method, args: unknown[]) {
     const res = await fetch(`${baseUrl}/${entity.name}/${method}`, {
       method: "POST",
@@ -41,7 +42,6 @@ export function createHttpStore(baseUrl: string): Store {
     return body === null ? undefined : body;
   }
   return {
-    migrate: (entity) => call(entity, "migrate", []) as never,
     list: (entity, query) => call(entity, "list", [query ?? {}]) as never,
     get: (entity, id) => call(entity, "get", [id]) as never,
     create: (entity, input) => call(entity, "create", [input]) as never,

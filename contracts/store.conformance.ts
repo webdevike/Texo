@@ -1,25 +1,26 @@
 // Adapter-agnostic behavioral suite. Every Store adapter must pass it unchanged.
 // Usage in an adapter's test file:
 //   runStoreConformance("sqlite", () => createSqliteStore(":memory:"))
+// `runClientStoreConformance` covers the ClientStore surface only (transports).
 import { describe, expect, test } from "bun:test";
-import { z } from "zod";
 import { defineEntity } from "./entity";
-import { type Store, StoreNotFoundError, StoreSchemaError, StoreValidationError } from "./store";
+import { type ClientStore, type Store, StoreNotFoundError, StoreSchemaError, StoreValidationError } from "./store";
 
-const task = defineEntity({
+export const conformanceTask = defineEntity({
   name: "conformance_task",
   title: "title",
-  fields: {
-    title: z.string().min(1),
-    done: z.boolean().default(false),
-    priority: z.number().int(),
-    status: z.enum(["todo", "doing", "done"]),
-    note: z.string().optional(),
-  },
+  fields: [
+    { name: "title", kind: "string", min: 1 },
+    { name: "done", kind: "boolean", default: false },
+    { name: "priority", kind: "number", integer: true },
+    { name: "status", kind: "enum", options: ["todo", "doing", "done"] },
+    { name: "note", kind: "string", optional: true },
+  ],
 });
+const task = conformanceTask;
 
-export function runStoreConformance(label: string, make: () => Store | Promise<Store>) {
-  describe(`Store conformance: ${label}`, () => {
+export function runClientStoreConformance(label: string, make: () => ClientStore | Promise<ClientStore>) {
+  describe(`ClientStore conformance: ${label}`, () => {
     test("create returns a row with an id and applied defaults", async () => {
       const store = await make();
       const row = await store.create(task, { title: "a", priority: 1, status: "todo" });
@@ -33,7 +34,7 @@ export function runStoreConformance(label: string, make: () => Store | Promise<S
       const store = await make();
       await expect(store.create(task, { title: "", priority: 1, status: "todo" })).rejects.toBeInstanceOf(StoreValidationError);
       await expect(store.create(task, { title: "x", priority: 1.5, status: "todo" })).rejects.toBeInstanceOf(StoreValidationError);
-      await expect(store.create(task, { title: "x", priority: 1, status: "nope" as never })).rejects.toBeInstanceOf(StoreValidationError);
+      await expect(store.create(task, { title: "x", priority: 1, status: "nope" })).rejects.toBeInstanceOf(StoreValidationError);
       expect(await store.list(task)).toEqual([]);
     });
 
@@ -105,9 +106,16 @@ export function runStoreConformance(label: string, make: () => Store | Promise<S
       expect(row.note).toBeUndefined();
       expect((await store.get(task, row.id))!.note).toBeUndefined();
     });
+  });
+}
+
+export function runStoreConformance(label: string, make: () => Store | Promise<Store>) {
+  runClientStoreConformance(label, make);
+
+  describe(`Store conformance: ${label}`, () => {
     // Schema evolution: the same entity name with a changed shape against the same store.
     // A memory store passes these trivially; a persistent one must reconcile.
-    const v1 = defineEntity({ name: "conformance_evolve", title: "title", fields: { title: z.string() } });
+    const v1 = defineEntity({ name: "conformance_evolve", title: "title", fields: [{ name: "title", kind: "string" }] });
 
     test("migrate is idempotent and additive optional/defaulted fields keep existing rows readable", async () => {
       const store = await make();
@@ -117,7 +125,7 @@ export function runStoreConformance(label: string, make: () => Store | Promise<S
       const v2 = defineEntity({
         name: "conformance_evolve",
         title: "title",
-        fields: { title: z.string(), note: z.string().optional(), flag: z.boolean().default(true) },
+        fields: [{ name: "title", kind: "string" }, { name: "note", kind: "string", optional: true }, { name: "flag", kind: "boolean", default: true }],
       });
       await store.migrate(v2);
       const rows = await store.list(v2);
@@ -134,8 +142,27 @@ export function runStoreConformance(label: string, make: () => Store | Promise<S
       const store = await make();
       await store.migrate(v1);
       await store.create(v1, { title: "old" });
-      const v2 = defineEntity({ name: "conformance_evolve", title: "title", fields: { title: z.string(), must: z.number() } });
+      const v2 = defineEntity({ name: "conformance_evolve", title: "title", fields: [{ name: "title", kind: "string" }, { name: "must", kind: "number" }] });
       await expect(store.migrate(v2)).rejects.toBeInstanceOf(StoreSchemaError);
+    });
+
+    test("migrate accepts a new required field when the table is empty", async () => {
+      const store = await make();
+      await store.migrate(v1);
+      const v2 = defineEntity({ name: "conformance_evolve", title: "title", fields: [{ name: "title", kind: "string" }, { name: "must", kind: "number" }] });
+      await store.migrate(v2);
+      const row = await store.create(v2, { title: "x", must: 1 });
+      expect(row.must).toBe(1);
+    });
+
+    test("migrate after removing a field keeps remaining data readable", async () => {
+      const store = await make();
+      const wide = defineEntity({ name: "conformance_evolve", title: "title", fields: [{ name: "title", kind: "string" }, { name: "extra", kind: "string", optional: true }] });
+      await store.migrate(wide);
+      const row = await store.create(wide, { title: "keep", extra: "gone" });
+      await store.migrate(v1);
+      const rows = await store.list(v1);
+      expect(rows).toEqual([{ id: row.id, title: "keep" }]);
     });
   });
 }
