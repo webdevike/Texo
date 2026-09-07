@@ -1,6 +1,6 @@
 // The only place adapters are chosen. Server side.
 import { createSqliteStore } from "../adapters/store-sqlite";
-import { issue } from "./entities/issue";
+import { entities as registry } from "./entities";
 
-export const entities = { [issue.name]: issue };
+export const entities = Object.fromEntries(registry.map((e) => [e.name, e]));
 export const store = createSqliteStore("app/data.sqlite");

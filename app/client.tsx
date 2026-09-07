@@ -3,9 +3,8 @@ import { Container, MantineProvider, Stack, Tabs } from "@mantine/core";
 import { createRoot } from "react-dom/client";
 import { createHttpStore } from "../adapters/store-http";
 import { EntityPage } from "../ui/entity-page";
-import { issue } from "./entities/issue";
+import { entities } from "./entities";
 
-const entities = [issue];
 const store = createHttpStore("/api");
 
 function App() {
