@@ -8,6 +8,7 @@ import {
   IconLayoutGrid,
   IconMoon,
   IconPalette,
+  IconSearch,
   IconSun,
 } from '@tabler/icons-react';
 import * as BaseComponents from '@texo/ui';
@@ -313,6 +314,7 @@ export function App() {
   const navigate = useNavigate();
   const [panelEnabled, setPanelEnabled] = useState(false);
   const [propertyTab, setPropertyTab] = useState<string | null>('colors');
+  const [pageSearch, setPageSearch] = useState('');
   const {
     applyPreset,
     canRedo,
@@ -525,9 +527,25 @@ export function App() {
     </>
   );
 
+  const pageQuery = pageSearch.trim().toLowerCase();
+  const visiblePages = navigationItems.filter((item) => item.label.toLowerCase().includes(pageQuery));
+
+  const pagesSearch = (
+    <BaseTextInput
+      aria-label="Search pages"
+      leftSection={<IconSearch size={14} />}
+      onChange={(event) => setPageSearch(event.currentTarget.value)}
+      placeholder="Search pages"
+      size="xs"
+      styles={{ root: { width: '100%' }, input: { background: 'transparent', border: 0 } }}
+      value={pageSearch}
+      variant="unstyled"
+    />
+  );
+
   const pagesList = (
     <BaseStack gap={2}>
-      {navigationItems.map((item) => (
+      {visiblePages.map((item) => (
         <BaseNavLink
           active={pathname === item.path}
           key={item.path}
@@ -535,6 +553,11 @@ export function App() {
           onClick={() => navigate(item.path)}
         />
       ))}
+      {visiblePages.length === 0 && (
+        <BaseText c="dimmed" px="sm" size="sm">
+          No pages match
+        </BaseText>
+      )}
     </BaseStack>
   );
 
@@ -557,6 +580,7 @@ export function App() {
       icon: <IconLayoutGrid size={18} />,
       id: 'pages',
       label: 'Pages',
+      subheader: pagesSearch,
     },
   ];
 
