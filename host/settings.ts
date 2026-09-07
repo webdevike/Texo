@@ -12,22 +12,6 @@ export const setting = defineEntity({
   ],
 });
 
-export interface ThemeSettings {
-  primaryColor: string;
-  radius: "xs" | "sm" | "md" | "lg" | "xl";
-  colorScheme: "light" | "dark";
-  fontFamily: string;
-  appName: string;
-}
-
-export const defaultTheme: ThemeSettings = {
-  primaryColor: "blue",
-  radius: "md",
-  colorScheme: "light",
-  fontFamily: "system-ui, sans-serif",
-  appName: "texo",
-};
-
 export async function readSetting<T>(store: Store, key: string, fallback: T): Promise<T> {
   const [row] = await store.list(setting, { where: { key } });
   if (!row) return fallback;

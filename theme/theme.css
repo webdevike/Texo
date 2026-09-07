@@ -1,0 +1,95 @@
+.texo-card {
+  background: var(--texo-color-card);
+  box-shadow: var(--texo-card-shadow);
+}
+
+.texo-input {
+  background: var(--texo-color-input);
+  border-color: var(--mantine-color-default-border);
+  box-shadow: var(--texo-control-shadow);
+}
+
+.texo-checkbox-input {
+  background: var(--texo-color-input);
+  border-color: var(--mantine-color-default-border);
+  box-shadow: var(--texo-control-shadow);
+}
+
+.texo-checkbox-input:checked {
+  background: var(--mantine-primary-color-filled);
+}
+
+.texo-popover {
+  background: var(--texo-color-popover);
+  border-color: var(--mantine-color-default-border);
+}
+
+.texo-tc-properties :global(.mantine-InputWrapper-root) {
+  display: grid;
+  grid-template-columns: minmax(88px, 112px) minmax(0, 1fr);
+  column-gap: var(--mantine-spacing-sm);
+  align-items: center;
+}
+
+.texo-tc-properties :global(.mantine-InputWrapper-label) {
+  grid-column: 1;
+  margin: 0;
+  color: var(--mantine-color-dimmed);
+  font-size: var(--mantine-font-size-sm);
+  line-height: 1.2;
+}
+
+.texo-tc-properties :global(.mantine-Input-wrapper) {
+  grid-column: 2;
+  grid-row: 1;
+  width: 100%;
+}
+
+.texo-tc-properties :global(.mantine-InputWrapper-description),
+.texo-tc-properties :global(.mantine-InputWrapper-error) {
+  grid-column: 2;
+}
+
+
+.texo-tc-properties
+  :global(.mantine-InputWrapper-root:not(:has(.mantine-InputWrapper-label)))
+  :global(.mantine-Input-wrapper) {
+  grid-column: 1 / -1;
+}
+.texo-tc-properties :global(.mantine-Switch-root) {
+  display: grid;
+  grid-template-columns: minmax(88px, 112px) minmax(0, 1fr);
+  column-gap: var(--mantine-spacing-sm);
+  align-items: center;
+}
+
+.texo-tc-properties :global(.mantine-Switch-labelWrapper) {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.texo-tc-properties :global(.mantine-Switch-body) {
+  display: contents;
+}
+
+.texo-tc-properties :global(.mantine-Switch-track) {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+@media (max-width: 22em) {
+  .texo-tc-properties :global(.mantine-InputWrapper-root),
+  .texo-tc-properties :global(.mantine-Switch-root) {
+    grid-template-columns: 1fr;
+    row-gap: 6px;
+  }
+
+  .texo-tc-properties :global(.mantine-Input-wrapper),
+  .texo-tc-properties :global(.mantine-InputWrapper-description),
+  .texo-tc-properties :global(.mantine-InputWrapper-error),
+  .texo-tc-properties :global(.mantine-Switch-track),
+  .texo-tc-properties :global(.mantine-Switch-labelWrapper) {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}

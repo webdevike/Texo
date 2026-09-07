@@ -6,7 +6,7 @@ import { createRoot } from "react-dom/client";
 import { createHttpStore } from "../adapters/store-http";
 import { entitiesOf, host, type Manifest } from "../ui/client";
 import { EntityPage } from "../ui/entity-page";
-import { ThemedProvider, useThemeSettings } from "../ui/theme";
+import { defaultPersistedTheme, type PersistedTheme, ThemedProvider } from "../ui/theme";
 import { SchemaBuilder } from "./schema-builder";
 import { ThemePanel } from "./theme-panel";
 
@@ -15,7 +15,7 @@ const store = createHttpStore("/api");
 type View = { kind: "content"; name: string } | { kind: "schema"; name: string } | { kind: "schema-new" } | { kind: "theme" } | { kind: "system" };
 
 function Admin() {
-  const [theme, setTheme] = useThemeSettings();
+  const [appName, setAppName] = useState(defaultPersistedTheme.appName);
   const [m, setManifest] = useState<Manifest | undefined>();
   const [view, setView] = useState<View>({ kind: "system" });
   const reload = useCallback(() => host.manifest().then(setManifest), []);
@@ -27,11 +27,11 @@ function Admin() {
   const isActive = (v: View) => JSON.stringify(v) === JSON.stringify(view);
 
   return (
-    <ThemedProvider theme={theme}>
+    <ThemedProvider persist onLoaded={(t: PersistedTheme) => setAppName(t.appName)}>
       <AppShell navbar={{ width: 240, breakpoint: 0 }} padding="lg">
         <AppShell.Navbar p="sm">
           <Stack gap={2}>
-            <Text fw={600} px="sm" pb="xs">{theme.appName} <Text span c="dimmed" size="xs">admin</Text></Text>
+            <Text fw={600} px="sm" pb="xs">{appName} <Text span c="dimmed" size="xs">admin</Text></Text>
             <Text size="xs" c="dimmed" px="sm" pt="xs" tt="uppercase" fw={600}>Content</Text>
             {content.map((e) => (
               <NavLink key={e.name} label={e.name} leftSection={<IconTable size={16} />} active={isActive({ kind: "content", name: e.name })} onClick={() => setView({ kind: "content", name: e.name })} />
@@ -61,7 +61,7 @@ function Admin() {
               <SchemaBuilder key="new" spec={{ name: "", title: "", fields: [{ name: "name", kind: "string", min: 1 }] }} isNew onSaved={async () => { await reload(); }} onDeleted={reload} />
             </Stack>
           )}
-          {view.kind === "theme" && (<Stack><Title order={3}>Theme</Title><ThemePanel theme={theme} onChange={setTheme} /></Stack>)}
+          {view.kind === "theme" && (<Stack><Title order={3}>Theme</Title><ThemePanel appName={appName} onAppName={setAppName} /></Stack>)}
           {view.kind === "system" && (
             <Stack>
               <Title order={3}>System</Title>

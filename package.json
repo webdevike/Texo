@@ -12,6 +12,7 @@
     "typescript": "^7"
   },
   "dependencies": {
+    "@mantine/code-highlight": "^9.6.0",
     "@mantine/core": "^9.6.0",
     "@mantine/hooks": "^9.6.0",
     "@tabler/icons-react": "^3.46.0",

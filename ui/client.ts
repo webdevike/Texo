@@ -1,7 +1,6 @@
 // Browser-side host client: manifest, specs, settings. The UI never imports texo.config.
 import { defineEntity, type Entity, type EntitySpec } from "../contracts/entity";
 import type { Manifest } from "../host/manifest";
-import type { ThemeSettings } from "../host/settings";
 
 const base = "/api/_texo";
 
@@ -19,7 +18,7 @@ export const host = {
   putSetting: (key: string, value: unknown): Promise<void> => fetch(`${base}/settings/${key}`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(value) }).then(ok),
 };
 
-export type { Manifest, ThemeSettings };
+export type { Manifest };
 
 /** Manifest specs are wire data; the UI needs real entities (zod derived) for forms. */
 export function entitiesOf(m: Manifest): Entity[] {

@@ -7,7 +7,7 @@
 import { storeHandler } from "../adapters/store-http";
 import { StoreSchemaError } from "../contracts/store";
 import { manifest } from "../host/manifest";
-import { defaultTheme, readSetting, setting, writeSetting } from "../host/settings";
+import { readSetting, setting, writeSetting } from "../host/settings";
 import { createSpecRegistry } from "../host/specs";
 import { specsDir, store } from "./texo.config";
 import admin from "./admin.html";
@@ -19,7 +19,7 @@ const registry = createSpecRegistry(specsDir, store);
 for (const entity of registry.all()) await store.migrate(entity);
 
 const api = storeHandler(store, (name) => (name === setting.name ? setting : registry.get(name)));
-const settingDefaults: Record<string, unknown> = { theme: defaultTheme };
+const settingDefaults: Record<string, unknown> = {};
 
 async function texo(req: Request, path: string): Promise<Response> {
   const [head, arg] = path.split("/");

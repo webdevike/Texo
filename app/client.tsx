@@ -6,20 +6,20 @@ import { createHttpStore } from "../adapters/store-http";
 import type { Entity } from "../contracts/entity";
 import { entitiesOf, host } from "../ui/client";
 import { EntityPage } from "../ui/entity-page";
-import { ThemedProvider, useThemeSettings } from "../ui/theme";
+import { defaultPersistedTheme, type PersistedTheme, ThemedProvider } from "../ui/theme";
 
 const store = createHttpStore("/api");
 
 function App() {
-  const [theme] = useThemeSettings();
+  const [appName, setAppName] = useState(defaultPersistedTheme.appName);
   const [entities, setEntities] = useState<Entity[]>([]);
   useEffect(() => { host.manifest().then((m) => setEntities(entitiesOf(m).filter((e) => !m.system.includes(e.name)))); }, []);
 
   return (
-    <ThemedProvider theme={theme}>
+    <ThemedProvider onLoaded={(t: PersistedTheme) => setAppName(t.appName)}>
       <Container py="xl">
         <Group justify="space-between" mb="md">
-          <Text fw={600}>{theme.appName}</Text>
+          <Text fw={600}>{appName}</Text>
           <Anchor href="/admin" size="sm">admin</Anchor>
         </Group>
         {entities.length > 0 && (
