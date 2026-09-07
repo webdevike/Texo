@@ -5,6 +5,10 @@ import {
     type ActionIconProps,
     AppShell,
     type AppShellProps,
+    Badge,
+    type BadgeProps,
+    Code,
+    type CodeProps,
     Box,
     type BoxProps,
     Button,
@@ -67,6 +71,8 @@ import {
 export const BaseAccordion = Accordion;
 export const BaseActionIcon = ActionIcon;
 export const BaseAppShell = AppShell;
+export const BaseBadge = Badge;
+export const BaseCode = Code;
 export const BaseBox = Box;
 export const BaseCodeHighlight = CodeHighlight;
 export const BaseCombobox = Combobox;
@@ -98,6 +104,8 @@ export const BaseTree = Tree;
 export type BaseActionIconProps = ActionIconProps;
 export type BaseAccordionProps = AccordionProps;
 export type BaseAppShellProps = AppShellProps;
+export type BaseBadgeProps = BadgeProps;
+export type BaseCodeProps = CodeProps;
 export type BaseCodeHighlightProps = CodeHighlightProps;
 export type BaseColorInputProps = ColorInputProps;
 export type BaseBoxProps = BoxProps;

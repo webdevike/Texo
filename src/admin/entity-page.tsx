@@ -1,8 +1,8 @@
 // One page per entity: table + create/edit modal. Talks to the ClientStore contract only.
 import { Button, Group, Modal, Stack, Title } from "@mantine/core";
 import { useCallback, useEffect, useState } from "react";
-import type { Entity, Row } from "../contracts/entity";
-import type { ClientStore } from "../contracts/store";
+import type { Entity, Row } from "../../experiments/contracts-spike/contracts/entity";
+import type { ClientStore } from "../../experiments/contracts-spike/contracts/store";
 import { EntityForm } from "./entity-form";
 import { EntityTable } from "./entity-table";
 

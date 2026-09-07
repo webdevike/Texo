@@ -3,8 +3,8 @@
 import { ActionIcon, Button, Checkbox, Group, NumberInput, Select, Stack, Table, Text, TextInput } from "@mantine/core";
 import { IconPlus, IconTrash } from "@tabler/icons-react";
 import { useState } from "react";
-import type { EntitySpec, FieldSpec } from "../contracts/entity";
-import { host } from "../ui/client";
+import type { EntitySpec, FieldSpec } from "../../experiments/contracts-spike/contracts/entity";
+import { host } from "./client";
 
 const KINDS: FieldSpec["kind"][] = ["string", "number", "boolean", "enum"];
 

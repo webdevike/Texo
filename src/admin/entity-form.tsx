@@ -1,8 +1,8 @@
 // Form rendered from entity.fields. No per-entity code.
 import { Button, Group, NumberInput, Select, Stack, Switch, Text, Textarea, TextInput } from "@mantine/core";
 import { useState } from "react";
-import type { Entity, FieldSpec, Input, Row } from "../contracts/entity";
-import { StoreValidationError } from "../contracts/store";
+import type { Entity, FieldSpec, Input, Row } from "../../experiments/contracts-spike/contracts/entity";
+import { StoreValidationError } from "../../experiments/contracts-spike/contracts/store";
 
 function FieldControl({ field, value, onChange }: { field: FieldSpec; value: unknown; onChange: (v: unknown) => void }) {
   const label = field.name;

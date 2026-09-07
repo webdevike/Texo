@@ -6,6 +6,7 @@ import {
   IconChevronDown,
   IconDotsVertical,
   IconLayoutGrid,
+  IconServer,
   IconMoon,
   IconPalette,
   IconSearch,
@@ -14,6 +15,8 @@ import {
 import * as BaseComponents from '@texo/ui';
 import {
   createElement,
+  useCallback,
+  useEffect,
   useState,
   type ComponentType,
   type PropsWithChildren,
@@ -26,6 +29,9 @@ import {
   useLocation,
   useNavigate,
 } from 'react-router-dom';
+import { AdminContent, AdminSchema, AdminSystem } from '../admin/admin-pages';
+import { BackendNav, BackendSearch } from '../admin/backend-rail';
+import { host, type Manifest } from '../admin/client';
 import { AttioDashboardPage } from './attio-dashboard-page';
 import { CardsPage } from './cards-page';
 import { DashboardPage } from './dashboard-page';
@@ -315,6 +321,15 @@ export function App() {
   const [panelEnabled, setPanelEnabled] = useState(false);
   const [propertyTab, setPropertyTab] = useState<string | null>('colors');
   const [pageSearch, setPageSearch] = useState('');
+  const [backendSearch, setBackendSearch] = useState('');
+  const [manifest, setManifest] = useState<Manifest | undefined>();
+  const reloadManifest = useCallback(
+    () => host.manifest().then(setManifest).catch(() => setManifest(undefined)),
+    [],
+  );
+  useEffect(() => {
+    void reloadManifest();
+  }, [reloadManifest]);
   const {
     applyPreset,
     canRedo,
@@ -582,6 +597,18 @@ export function App() {
       label: 'Pages',
       subheader: pagesSearch,
     },
+    {
+      body: <BackendNav manifest={manifest} pathname={pathname} query={backendSearch} />,
+      header: (
+        <BaseText fw={600} px="sm" size="sm">
+          Backend
+        </BaseText>
+      ),
+      icon: <IconServer size={18} />,
+      id: 'backend',
+      label: 'Backend',
+      subheader: <BackendSearch onChange={setBackendSearch} value={backendSearch} />,
+    },
   ];
 
   return (
@@ -610,6 +637,10 @@ export function App() {
               }
             />
           ))}
+        <Route path="/admin" element={<Navigate to="/admin/system" replace />} />
+        <Route path="/admin/system" element={manifest ? <AdminSystem manifest={manifest} /> : null} />
+        <Route path="/admin/content/:name" element={manifest ? <AdminContent manifest={manifest} /> : null} />
+        <Route path="/admin/schema/:name" element={manifest ? <AdminSchema manifest={manifest} onChanged={reloadManifest} /> : null} />
         <Route path="*" element={<Navigate to="/theme" replace />} />
       </Routes>
 

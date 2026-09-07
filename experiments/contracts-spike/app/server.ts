@@ -1,25 +1,23 @@
-// Bun server: serves the app + admin bundles and exposes the host over /api.
+// Host API on :4321. The Texo app on :4200 proxies /api here (vite.config.mts), so the
+// shell you configure and the backend you configure are the same page.
 //   /api/<entity>/<method>      ClientStore surface (storeHandler)
 //   /api/_texo/manifest         GET  what the admin knows
 //   /api/_texo/specs            PUT  upsert an entity spec (validate → migrate → write file)
 //   /api/_texo/specs/<name>     DELETE
 //   /api/_texo/settings/<key>   GET / PUT
+import { z } from "zod";
 import { storeHandler } from "../adapters/store-http";
 import { StoreSchemaError } from "../contracts/store";
 import { manifest } from "../host/manifest";
 import { readSetting, setting, writeSetting } from "../host/settings";
 import { createSpecRegistry } from "../host/specs";
 import { specsDir, store } from "./texo.config";
-import admin from "./admin.html";
-import index from "./index.html";
-import { z } from "zod";
 
 await store.migrate(setting);
 const registry = createSpecRegistry(specsDir, store);
 for (const entity of registry.all()) await store.migrate(entity);
 
 const api = storeHandler(store, (name) => (name === setting.name ? setting : registry.get(name)));
-const settingDefaults: Record<string, unknown> = {};
 
 async function texo(req: Request, path: string): Promise<Response> {
   const [head, arg] = path.split("/");
@@ -39,7 +37,7 @@ async function texo(req: Request, path: string): Promise<Response> {
     return Response.json({ ok: true });
   }
   if (head === "settings" && arg) {
-    if (req.method === "GET") return Response.json(await readSetting(store, arg, settingDefaults[arg] ?? {}));
+    if (req.method === "GET") return Response.json(await readSetting(store, arg, {}));
     if (req.method === "PUT") {
       await writeSetting(store, arg, await req.json());
       return Response.json({ ok: true });
@@ -50,7 +48,6 @@ async function texo(req: Request, path: string): Promise<Response> {
 
 const server = Bun.serve({
   port: 4321,
-  routes: { "/": index, "/admin": admin, "/admin/*": admin },
   async fetch(req) {
     const url = new URL(req.url);
     if (url.pathname.startsWith("/api/_texo/")) return texo(req, url.pathname.slice("/api/_texo/".length));
@@ -59,4 +56,4 @@ const server = Bun.serve({
   },
 });
 
-console.log(`texo-spike on http://localhost:${server.port}  admin at /admin`);
+console.log(`texo host on http://localhost:${server.port} (API only; UI is the Texo app on :4200)`);

@@ -1,6 +1,6 @@
 // Table rendered from entity.fields. Sort by clicking a header; click a row to edit.
 import { Badge, Table, Text } from "@mantine/core";
-import type { Entity, FieldSpec, Row } from "../contracts/entity";
+import type { Entity, FieldSpec, Row } from "../../experiments/contracts-spike/contracts/entity";
 
 function Cell({ field, value }: { field: FieldSpec; value: unknown }) {
   if (value === undefined || value === null) return <Text c="dimmed" size="sm">–</Text>;

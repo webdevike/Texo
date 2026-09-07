@@ -8,4 +8,5 @@ export * from './texo-icons';
 export * from './texo-theme-provider';
 export * from './texo-theme-picker';
 export * from './texo-table';
+export * from './texo-nav';
 export { theme } from './theme';

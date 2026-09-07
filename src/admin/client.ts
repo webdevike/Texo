@@ -1,6 +1,6 @@
 // Browser-side host client: manifest, specs, settings. The UI never imports texo.config.
-import { defineEntity, type Entity, type EntitySpec } from "../contracts/entity";
-import type { Manifest } from "../host/manifest";
+import { defineEntity, type Entity, type EntitySpec } from "../../experiments/contracts-spike/contracts/entity";
+import type { Manifest } from "../../experiments/contracts-spike/host/manifest";
 
 const base = "/api/_texo";
 
