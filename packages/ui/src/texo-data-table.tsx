@@ -4,6 +4,7 @@ import {
   type CSSProperties,
   type KeyboardEvent,
   type MouseEvent,
+  memo,
   type ReactNode,
   useCallback,
   useEffect,
@@ -60,6 +61,8 @@ export interface TexoDataTableProps<T extends { id: string }> {
 
 const ROW_HEIGHT: Record<'compact' | 'comfortable', number> = { compact: 36, comfortable: 46 };
 const SELECTION_TRACK = '42px';
+const NO_SORT: readonly TexoDataTableSort[] = [];
+const NO_SELECTION: readonly string[] = [];
 
 function defaultCell(_column: TexoDataTableColumn, value: unknown) {
   if (value === undefined || value === null) return <BaseText c="dimmed" size="sm">-</BaseText>;
@@ -79,15 +82,67 @@ export function cycleSort(current: readonly TexoDataTableSort[], field: string, 
   return current.map((s) => (s.field === field ? next : s));
 }
 
+interface TableRowProps<T extends { id: string }> {
+  columns: readonly TexoDataTableColumn[];
+  focused: boolean;
+  index: number;
+  measure: (node: HTMLDivElement | null) => void;
+  onClick: (index: number, row: T) => void;
+  onToggle: (id: string) => void;
+  renderCell: NonNullable<TexoDataTableProps<T>['renderCell']>;
+  row: T;
+  selectable: boolean;
+  selected: boolean;
+}
+
+/** Memoized so a range change only renders the rows that entered the window. */
+const TableRow = memo(function TableRow<T extends { id: string }>({
+  columns,
+  focused,
+  index,
+  measure,
+  onClick,
+  onToggle,
+  renderCell,
+  row,
+  selectable,
+  selected,
+}: TableRowProps<T>) {
+  return (
+    <div
+      aria-rowindex={index + 1}
+      aria-selected={selectable ? selected : undefined}
+      className={classes.row}
+      data-even={index % 2 === 1 ? '' : undefined}
+      data-focused={focused ? '' : undefined}
+      data-index={index}
+      onClick={() => onClick(index, row)}
+      ref={measure}
+      role="row"
+    >
+      {selectable && (
+        <div className={`${classes.cell} ${classes.selectionCell}`} onClick={(e) => e.stopPropagation()} role="gridcell">
+          <BaseCheckbox aria-label={`Select ${row.id}`} checked={selected} onChange={() => onToggle(row.id)} size="xs" />
+        </div>
+      )}
+      {columns.map((column) => (
+        <div className={classes.cell} data-align={column.align} key={column.key} role="gridcell">
+          {renderCell(column, (row as Record<string, unknown>)[column.key], row)}
+        </div>
+      ))}
+    </div>
+  );
+}) as <T extends { id: string }>(props: TableRowProps<T>) => ReactNode;
+
 export function TexoDataTable<T extends { id: string }>({
   columns,
   rows,
   renderCell = defaultCell,
-  sort = [],
+  sort = NO_SORT,
   onSortChange,
   onOpen,
   selectable = false,
-  selected = [],
+  selected = NO_SELECTION,
   onSelectedChange,
   onEndReached,
   loading = false,
@@ -105,6 +160,10 @@ export function TexoDataTable<T extends { id: string }>({
     estimateSize: () => rowHeight,
     overscan,
     getItemKey: (index) => rows[index].id,
+    // Scroll-only updates write row transforms straight to the DOM; React re-renders only when
+    // the visible index range changes. Rows are `position: absolute; top: 0; left: 0` for this.
+    directDomUpdates: true,
+    directDomUpdatesMode: 'transform',
   });
   const items = virtualizer.getVirtualItems();
   const lastRendered = items.length ? items[items.length - 1].index : -1;
@@ -131,10 +190,21 @@ export function TexoDataTable<T extends { id: string }>({
     [rows.length, virtualizer],
   );
 
-  const toggle = (id: string) => {
-    if (!onSelectedChange) return;
-    onSelectedChange(selected.includes(id) ? selected.filter((s) => s !== id) : [...selected, id]);
-  };
+  const toggle = useCallback(
+    (id: string) => {
+      if (!onSelectedChange) return;
+      onSelectedChange(selected.includes(id) ? selected.filter((s) => s !== id) : [...selected, id]);
+    },
+    [onSelectedChange, selected],
+  );
+
+  const onRowClick = useCallback(
+    (index: number, row: T) => {
+      setFocused(index);
+      onOpen?.(row);
+    },
+    [onOpen],
+  );
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     switch (event.key) {
@@ -239,39 +309,22 @@ export function TexoDataTable<T extends { id: string }>({
             {emptyLabel}
           </BaseText>
         )}
-        <div className={classes.body} role="rowgroup" style={{ height: virtualizer.getTotalSize() }}>
-          {items.map((item) => {
-            const row = rows[item.index];
-            const isSelected = selectable && selected.includes(row.id);
-            return (
-              <div
-                aria-rowindex={item.index + 1}
-                aria-selected={selectable ? isSelected : undefined}
-                className={classes.row}
-                data-even={item.index % 2 === 1 ? '' : undefined}
-                data-focused={focused === item.index ? '' : undefined}
-                data-index={item.index}
-                key={item.key}
-                onClick={() => {
-                  setFocused(item.index);
-                  onOpen?.(row);
-                }}
-                role="row"
-                style={{ width: '100%', transform: `translateY(${item.start}px)` }}
-              >
-                {selectable && (
-                  <div className={`${classes.cell} ${classes.selectionCell}`} onClick={(e) => e.stopPropagation()} role="gridcell">
-                    <BaseCheckbox aria-label={`Select ${row.id}`} checked={isSelected} onChange={() => toggle(row.id)} size="xs" />
-                  </div>
-                )}
-                {columns.map((column) => (
-                  <div className={classes.cell} data-align={column.align} key={column.key} role="gridcell">
-                    {renderCell(column, (row as Record<string, unknown>)[column.key], row)}
-                  </div>
-                ))}
-              </div>
-            );
-          })}
+        <div className={classes.body} ref={virtualizer.containerRef} role="rowgroup">
+          {items.map((item) => (
+            <TableRow
+              columns={columns}
+              focused={focused === item.index}
+              index={item.index}
+              key={item.key}
+              measure={virtualizer.measureElement}
+              onClick={onRowClick}
+              onToggle={toggle}
+              renderCell={renderCell}
+              row={rows[item.index]}
+              selectable={selectable}
+              selected={selectable && selected.includes(rows[item.index].id)}
+            />
+          ))}
         </div>
       </div>
     </BaseBox>

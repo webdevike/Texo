@@ -18,7 +18,8 @@ import {
   type TexoFilterField,
   filtersToWhere,
 } from '@texo/ui';
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import type { Entity, FieldSpec, Row } from '../../experiments/contracts-spike/contracts/entity';
 import type { ClientStore } from '../../experiments/contracts-spike/contracts/store';
 import { EntityForm } from './entity-form';
@@ -58,7 +59,9 @@ export function EntityPage({ entity, store, resolveEntity }: {
   const list = useList(store, entity, { include: include.length ? include : undefined });
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState<TexoFilter[]>([]);
-  const [editing, setEditing] = useState<Row | 'new' | undefined>();
+  // `?new=1` (command palette "New <entity>") opens the create modal on arrival.
+  const [params, setParams] = useSearchParams();
+  const [editing, setEditing] = useState<Row | 'new' | undefined>(() => (params.has('new') ? 'new' : undefined));
 
   const fieldByName = useMemo(() => Object.fromEntries(entity.fields.map((f) => [f.name, f])) as Record<string, FieldSpec>, [entity]);
   const columns = useMemo<TexoDataTableColumn[]>(
@@ -72,16 +75,24 @@ export function EntityPage({ entity, store, resolveEntity }: {
         .map((f) => ({ name: f.name, kind: f.kind as TexoFilterField['kind'], options: f.kind === 'enum' ? f.options : undefined })),
     [entity],
   );
+  const renderCell = useCallback(
+    (column: TexoDataTableColumn, value: unknown) => <Cell field={fieldByName[column.key]} value={value} />,
+    [fieldByName],
+  );
   const sort = useMemo(() => {
     const o = list.query.orderBy;
     return o === undefined ? [] : Array.isArray(o) ? o : [o];
   }, [list.query.orderBy]);
 
+  const close = () => {
+    setEditing(undefined);
+    if (params.has('new')) setParams((p) => { p.delete('new'); return p; }, { replace: true });
+  };
   // Slice E extends EntityForm with `store` + `resolveEntity`; passed through untyped until merge.
   const formProps: Record<string, unknown> = { store, resolveEntity };
 
   return (
-    <BaseStack gap="sm" style={{ height: '100%', minHeight: 0 }}>
+    <BaseStack gap="sm" style={{ height: 'calc(100dvh - 136px)', minHeight: 360 }}>
       <BaseGroup justify="space-between">
         <BaseTitle order={3}>{entity.name}</BaseTitle>
         <BaseGroup gap="xs">
@@ -113,7 +124,7 @@ export function EntityPage({ entity, store, resolveEntity }: {
         onEndReached={list.loadMore}
         onOpen={setEditing}
         onSortChange={list.setOrderBy}
-        renderCell={(column, value, row) => <Cell field={fieldByName[column.key]} value={value} />}
+        renderCell={renderCell}
         rows={list.rows}
         sort={sort}
       />
