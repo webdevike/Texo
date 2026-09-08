@@ -42,7 +42,8 @@ export function storeHandler(
             if (origin && event.origin === origin) return; // own echo
             controller.enqueue(encoder.encode(`id: ${event.seq}\ndata: ${JSON.stringify(event)}\n\n`));
           });
-          const ping = setInterval(() => controller.enqueue(encoder.encode(": ping\n\n")), 15000);
+          // Under Bun.serve's default idleTimeout (10s); keeps the stream alive between events.
+          const ping = setInterval(() => controller.enqueue(encoder.encode(": ping\n\n")), 5000);
           stop = () => {
             unsub();
             clearInterval(ping);
@@ -76,30 +77,47 @@ export interface HttpStoreOptions {
   origin?: string;
 }
 
-/** Minimal SSE reader over fetch: works in browsers and Bun alike (no EventSource dependency). */
+/**
+ * Minimal SSE reader over fetch: works in browsers and Bun alike (no EventSource dependency).
+ * A stream that ends (server idle timeout, proxy restart, network blip) is reopened with backoff;
+ * only `stop()` or an auth refusal (401/403) ends it for good.
+ */
 function readSse(url: string, onEvent: (data: string) => void): () => void {
   const controller = new AbortController();
+  let delay = 250;
   (async () => {
-    try {
-      const res = await fetch(url, { signal: controller.signal, headers: { accept: "text/event-stream" } });
-      const reader = res.body?.getReader();
-      if (!reader) return;
-      const decoder = new TextDecoder();
-      let buffer = "";
-      for (;;) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        let idx: number;
-        while ((idx = buffer.indexOf("\n\n")) !== -1) {
-          const frame = buffer.slice(0, idx);
-          buffer = buffer.slice(idx + 2);
-          const data = frame.split("\n").filter((l) => l.startsWith("data:")).map((l) => l.slice(5).trimStart()).join("\n");
-          if (data) onEvent(data);
+    while (!controller.signal.aborted) {
+      try {
+        const res = await fetch(url, { signal: controller.signal, headers: { accept: "text/event-stream" } });
+        if (res.status === 401 || res.status === 403) return;
+        const reader = res.ok ? res.body?.getReader() : undefined;
+        if (reader) {
+          const decoder = new TextDecoder();
+          let buffer = "";
+          for (;;) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            delay = 250; // bytes arrived: the connection is healthy
+            buffer += decoder.decode(value, { stream: true });
+            let idx: number;
+            while ((idx = buffer.indexOf("\n\n")) !== -1) {
+              const frame = buffer.slice(0, idx);
+              buffer = buffer.slice(idx + 2);
+              const data = frame.split("\n").filter((l) => l.startsWith("data:")).map((l) => l.slice(5).trimStart()).join("\n");
+              if (data) onEvent(data);
+            }
+          }
         }
+      } catch (e) {
+        if (e instanceof Error && e.name === "AbortError") return;
       }
-    } catch (e) {
-      if (!(e instanceof Error && e.name === "AbortError")) throw e;
+      if (controller.signal.aborted) return;
+      // Executor form: the app's tsconfig lib predates Promise.withResolvers.
+      await new Promise<void>((resolve) => {
+        const timer = setTimeout(resolve, delay);
+        controller.signal.addEventListener("abort", () => (clearTimeout(timer), resolve()), { once: true });
+      });
+      delay = Math.min(delay * 2, 5000);
     }
   })();
   return () => controller.abort();
