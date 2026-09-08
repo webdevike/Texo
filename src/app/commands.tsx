@@ -44,9 +44,9 @@ export function shellCommands(host: ShellCommandHost, ui: { openPalette: () => v
   return [
     { id: 'shell.palette', label: 'Command palette', keys: 'mod+k', group: 'Shell', run: ui.openPalette },
     { id: 'shell.help', label: 'Keyboard shortcuts', keys: ['?', 'shift+/'], group: 'Shell', run: ui.openHelp },
-    { id: 'shell.rail.theme', label: 'Go to Theme', keys: 'g t', group: 'Rail', run: () => host.setRail('theme') },
-    { id: 'shell.rail.pages', label: 'Go to Pages', keys: 'g p', group: 'Rail', run: () => host.setRail('pages') },
-    { id: 'shell.rail.backend', label: 'Go to Backend', keys: 'g b', group: 'Rail', run: () => host.setRail('backend') },
+    { id: 'shell.rail.theme', label: 'Go to Theme', keys: 'g 1', group: 'Rail', run: () => host.setRail('theme') },
+    { id: 'shell.rail.pages', label: 'Go to Pages', keys: 'g 2', group: 'Rail', run: () => host.setRail('pages') },
+    { id: 'shell.rail.backend', label: 'Go to Backend', keys: 'g 3', group: 'Rail', run: () => host.setRail('backend') },
     { id: 'shell.rail.prev', label: 'Previous rail panel', keys: '[', group: 'Rail', run: () => cycleRail(-1) },
     { id: 'shell.rail.next', label: 'Next rail panel', keys: ']', group: 'Rail', run: () => cycleRail(1) },
     { id: 'shell.rail.close', label: 'Close rail panel', group: 'Rail', run: () => host.setRail(null) },
