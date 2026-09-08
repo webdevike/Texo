@@ -21,16 +21,28 @@ import { useState } from 'react';
 import type { EntitySpec, FieldSpec } from '../../experiments/contracts-spike/contracts/entity';
 import { host } from './client';
 
-const KINDS: FieldSpec['kind'][] = ['string', 'number', 'boolean', 'enum'];
+const KINDS: FieldSpec['kind'][] = ['string', 'number', 'boolean', 'enum', 'date'];
 const KIND_ICON: Record<FieldSpec['kind'], TexoFieldKindIcon> = {
   string: 'text',
   number: 'number',
   boolean: 'boolean',
   enum: 'enum',
+  date: 'date',
+  relation: 'relation',
+  group: 'group',
 };
 
 function blankField(kind: FieldSpec['kind'] = 'string'): FieldSpec {
-  return kind === 'enum' ? { name: '', kind, options: ['a', 'b'] } : { name: '', kind };
+  switch (kind) {
+    case 'enum':
+      return { name: '', kind, options: ['a', 'b'] };
+    case 'relation':
+      return { name: '', kind, to: '' };
+    case 'group':
+      return { name: '', kind, fields: [{ name: 'value', kind: 'string' }] };
+    default:
+      return { name: '', kind };
+  }
 }
 
 function retype(f: FieldSpec, kind: FieldSpec['kind']): FieldSpec {
@@ -47,14 +59,22 @@ function describe(f: FieldSpec): string {
       return 'Boolean';
     case 'enum':
       return `Enumeration (${f.options.join(', ')})`;
+    case 'date':
+      return 'Date';
+    case 'relation':
+      return `Relation (${f.to})${f.many ? ' many' : ''}`;
+    case 'group':
+      return `Component (${f.fields.length} fields)`;
   }
 }
 
 function badgesOf(f: FieldSpec, saved: Set<string>): string[] {
   const out: string[] = [];
   if (!saved.has(f.name)) out.push('NEW');
-  if (!f.optional && f.default === undefined) out.push('REQUIRED');
-  if (f.default !== undefined) out.push(`DEFAULT ${String(f.default)}`);
+  const dflt = 'default' in f ? f.default : undefined;
+  if (!f.optional && dflt === undefined) out.push('REQUIRED');
+  if (dflt !== undefined) out.push(`DEFAULT ${String(dflt)}`);
+  if (f.kind === 'group' && f.repeatable) out.push('REPEATABLE');
   return out;
 }
 

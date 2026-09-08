@@ -13,13 +13,13 @@ export const setting = defineEntity({
 });
 
 export async function readSetting<T>(store: Store, key: string, fallback: T): Promise<T> {
-  const [row] = await store.list(setting, { where: { key } });
+  const [row] = (await store.list(setting, { where: { key } })).rows;
   if (!row) return fallback;
   return { ...fallback, ...(JSON.parse(String(row.value)) as Partial<T>) };
 }
 
 export async function writeSetting(store: Store, key: string, value: unknown): Promise<void> {
-  const [row] = await store.list(setting, { where: { key } });
+  const [row] = (await store.list(setting, { where: { key } })).rows;
   const serialized = JSON.stringify(value);
   if (row) await store.update(setting, row.id, { value: serialized });
   else await store.create(setting, { key, value: serialized });

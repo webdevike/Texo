@@ -14,7 +14,7 @@ export function EntityPage({ entity, store }: { entity: Entity; store: ClientSto
   const [editing, setEditing] = useState<Row | "new" | undefined>();
 
   const refresh = useCallback(async () => {
-    setRows(await store.list(entity, sort ? { orderBy: sort } : {}));
+    setRows((await store.list(entity, sort ? { orderBy: sort, limit: 500 } : { limit: 500 })).rows);
   }, [entity, store, sort]);
 
   useEffect(() => { void refresh(); }, [refresh]);

@@ -17,7 +17,7 @@ await store.migrate(setting);
 const registry = createSpecRegistry(specsDir, store);
 for (const entity of registry.all()) await store.migrate(entity);
 
-const api = storeHandler(store, (name) => (name === setting.name ? setting : registry.get(name)));
+const api = storeHandler(() => store, (name) => (name === setting.name ? setting : registry.get(name)));
 
 async function texo(req: Request, path: string): Promise<Response> {
   const [head, arg] = path.split("/");

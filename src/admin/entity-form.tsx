@@ -6,7 +6,8 @@ import { StoreValidationError } from "../../experiments/contracts-spike/contract
 
 function FieldControl({ field, value, onChange }: { field: FieldSpec; value: unknown; onChange: (v: unknown) => void }) {
   const label = field.name;
-  const required = !field.optional && field.default === undefined;
+  const dflt = 'default' in field ? field.default : undefined;
+  const required = !field.optional && dflt === undefined;
   switch (field.kind) {
     case "string":
       return field.long
@@ -19,12 +20,19 @@ function FieldControl({ field, value, onChange }: { field: FieldSpec; value: unk
       return <Switch label={label} checked={value === true} onChange={(e) => onChange(e.currentTarget.checked)} />;
     case "enum":
       return <Select label={label} data={field.options} value={typeof value === "string" ? value : null} onChange={(v) => onChange(v ?? undefined)} required={required} />;
+    case "date":
+      return <TextInput label={label} placeholder="YYYY-MM-DD" value={typeof value === "string" ? value : ""} onChange={(e) => onChange(e.currentTarget.value)} required={required} />;
+    case "relation":
+      // Placeholder until slice A ships the relation picker: raw id entry.
+      return <TextInput label={`${label} (id of ${field.to})`} value={typeof value === "string" ? value : ""} onChange={(e) => onChange(e.currentTarget.value)} required={required} />;
+    case "group":
+      return <Textarea label={`${label} (JSON)`} autosize minRows={2} value={value === undefined ? "" : JSON.stringify(value)} onChange={(e) => { try { onChange(e.currentTarget.value ? JSON.parse(e.currentTarget.value) : undefined); } catch { /* keep typing */ } }} />;
   }
 }
 
 function initial(entity: Entity, row?: Row): Record<string, unknown> {
   const out: Record<string, unknown> = {};
-  for (const f of entity.fields) out[f.name] = row?.[f.name] ?? f.default ?? (f.kind === "boolean" ? false : undefined);
+  for (const f of entity.fields) out[f.name] = row?.[f.name] ?? ('default' in f ? f.default : undefined) ?? (f.kind === "boolean" ? false : undefined);
   return out;
 }
 

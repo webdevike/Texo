@@ -6,6 +6,8 @@ function Cell({ field, value }: { field: FieldSpec; value: unknown }) {
   if (value === undefined || value === null) return <Text c="dimmed" size="sm">–</Text>;
   if (field.kind === "boolean") return <Badge variant="light" color={value ? "green" : "gray"}>{value ? "yes" : "no"}</Badge>;
   if (field.kind === "enum") return <Badge variant="outline">{String(value)}</Badge>;
+  if (field.kind === "relation") return <Text size="sm" lineClamp={1}>{typeof value === "object" && value !== null && "title" in value ? String((value as { title?: unknown }).title ?? "") : Array.isArray(value) ? `${value.length} linked` : String(value)}</Text>;
+  if (field.kind === "group") return <Text c="dimmed" size="sm">{Array.isArray(value) ? `${value.length} items` : "1 item"}</Text>;
   return <Text size="sm" lineClamp={1}>{String(value)}</Text>;
 }
 
