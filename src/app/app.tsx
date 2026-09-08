@@ -31,7 +31,7 @@ import { AttioDashboardPage } from './attio-dashboard-page';
 import { CardsPage } from './cards-page';
 import { DashboardPage } from './dashboard-page';
 import { CustomComponentsPage } from './custom-components-page';
-import { CanvasLibrary, CanvasPage, CanvasProvider } from './canvas-page';
+import { CanvasLibrary, CanvasPage, CanvasProvider } from './canvas-entry';
 import { ThemeControls } from './theme-controls';
 import { componentLibrary, projectComponents } from '../extensions/registry';
 

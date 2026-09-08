@@ -14,4 +14,12 @@ export const componentLibrary: TexoComponentRegistry = {
   [baseTextInput.id]: baseTextInput,
   [baseStack.id]: baseStack,
   ...projectComponents,
+  ...(import.meta.env.DEV
+    ? {
+        [customerHealthCard.id]: {
+          ...customerHealthCard,
+          targets: { action: { label: 'Customer action', selector: 'button' } },
+        },
+      }
+    : {}),
 };

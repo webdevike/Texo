@@ -26,6 +26,8 @@ export interface TexoComponentDefinition<Props extends Record<string, unknown> =
   id: string;
   name: string;
   properties: TexoPropertySchema<Props>;
+  /** Named internal elements exposed to authoring tools, scoped to this instance. */
+  targets?: Record<string, { label: string; selector: string }>;
 }
 export type TexoComponentRegistry = Record<string, TexoComponentDefinition<any>>;
 

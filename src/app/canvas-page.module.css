@@ -1,5 +1,10 @@
 .workspace {
   min-width: 0;
+  height: max(440px, calc(100dvh - 156px));
+}
+
+.toolbar {
+  flex-shrink: 0;
 }
 
 .library {
@@ -35,16 +40,21 @@
   min-width: 0;
 }
 
-.page {
-  position: relative;
+.editor {
   display: flex;
-  flex-direction: column;
-  gap: var(--mantine-spacing-xl);
+  flex: 1;
   min-width: 0;
-  min-height: max(480px, calc(100dvh - 220px));
-  padding: var(--mantine-spacing-xl);
+  min-height: 0;
+  overflow: hidden;
   border: 1px solid var(--mantine-color-default-border);
   border-radius: var(--mantine-radius-sm);
+}
+
+.page {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
   background: var(--mantine-color-body);
 }
 
@@ -53,73 +63,96 @@
   outline-offset: -2px;
 }
 
-.empty {
-  flex: 1;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: var(--mantine-spacing-xl);
+.page :global(.react-flow) {
+  --xy-background-color: var(--mantine-color-body);
+  --xy-background-pattern-color: var(--mantine-color-default-border);
+  --xy-controls-button-background-color: var(--mantine-color-body);
+  --xy-controls-button-background-color-hover: var(
+    --mantine-color-default-hover
+  );
+  --xy-controls-button-color: var(--mantine-color-text);
+  --xy-controls-button-border-color: var(--mantine-color-default-border);
 }
 
-.empty > * {
-  max-width: 400px;
+.page :global(.react-flow__controls) {
+  box-shadow: none;
+  border: 1px solid var(--mantine-color-default-border);
 }
 
-.instance,
-.content {
-  min-width: 0;
+.page :global(.react-flow__node-component) {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.page[data-mode='preview'] :global(.react-flow__node) {
+  cursor: auto;
 }
 
 .instance {
   position: relative;
+  width: 100%;
+  min-width: 0;
+  outline: 1px solid var(--mantine-color-default-border);
 }
 
-.content[inert] {
-  pointer-events: none;
-  user-select: none;
+.instance:hover {
+  outline-color: var(--mantine-color-dimmed);
 }
 
-.selection {
-  position: absolute;
-  inset: -4px;
-  width: calc(100% + 8px);
-  height: calc(100% + 8px);
-  margin: 0;
-  padding: 0;
-  border: 1px solid transparent;
-  border-radius: var(--mantine-radius-xs);
-  background: transparent;
-  color: var(--mantine-primary-color-contrast);
-  cursor: pointer;
-}
-
-.selection:hover {
-  border-color: var(--mantine-color-dimmed);
-}
-
-.selection[data-selected] {
-  border: 2px solid var(--mantine-primary-color-filled);
-}
-
-.selection:focus-visible {
+.instance[data-selected] {
   outline: 2px solid var(--mantine-primary-color-filled);
-  outline-offset: 3px;
 }
 
-.selectionLabel {
+.instance[data-mode='preview'],
+.instance[data-mode='preview']:hover {
+  outline: none;
+}
+
+.nodeLabel {
   position: absolute;
-  right: -2px;
-  bottom: 100%;
+  bottom: calc(100% + 6px);
+  left: 0;
   max-width: 100%;
   overflow: hidden;
-  padding: 2px var(--mantine-spacing-xs);
-  border-radius: var(--mantine-radius-xs) var(--mantine-radius-xs) 0 0;
-  background: var(--mantine-primary-color-filled);
-  font: inherit;
+  color: var(--mantine-color-dimmed);
   font-size: var(--mantine-font-size-xs);
+  line-height: 1.3;
   white-space: nowrap;
   text-overflow: ellipsis;
   pointer-events: none;
+}
+
+.instance[data-selected] .nodeLabel {
+  color: var(--mantine-primary-color-filled);
+}
+
+.resizeHandle {
+  width: 8px !important;
+  height: 20px !important;
+  border: 1px solid var(--mantine-primary-color-filled) !important;
+  border-radius: 2px !important;
+  background: var(--mantine-color-body) !important;
+}
+
+.empty,
+.unavailable {
+  position: absolute;
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+  padding: var(--mantine-spacing-xl);
+  text-align: center;
+}
+
+.empty {
+  pointer-events: none;
+}
+
+.empty > *,
+.unavailable > * {
+  max-width: 400px;
 }
 
 .dropFeedback {
@@ -135,12 +168,29 @@
   pointer-events: none;
 }
 
+.notes {
+  width: 320px;
+  flex-shrink: 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--mantine-spacing-md);
+  border-left: 1px solid var(--mantine-color-default-border);
+  background: var(--mantine-color-body);
+}
+
+.error {
+  flex-shrink: 0;
+  color: var(--mantine-color-error);
+  font-size: var(--mantine-font-size-sm);
+}
+
 @media (max-width: 48em) {
-  .page {
-    padding: var(--mantine-spacing-md);
+  .workspace {
+    height: max(500px, calc(100dvh - 120px));
   }
 
-  .empty {
-    padding: var(--mantine-spacing-md);
+  .notes {
+    width: min(280px, 48%);
+    padding: var(--mantine-spacing-sm);
   }
 }
