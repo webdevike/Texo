@@ -16,7 +16,7 @@ export const conformanceNote = defineEntity({
 
 /** Build a request carrying the credential a provider handed back (cookie header from a Set-Cookie value). */
 export function withCredential(credential: string, init: RequestInit = {}): Request {
-  const cookie = credential.split(";")[0];
+  const cookie = credential.split(";")[0] ?? "";
   return new Request("http://auth.test/", { ...init, headers: { ...(init.headers as Record<string, string>), cookie } });
 }
 

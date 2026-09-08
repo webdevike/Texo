@@ -6,8 +6,8 @@
 //   secret:  TEXO_SESSION_SECRET (dev default when unset)
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { AuthError, type AuthProvider, type Session, type Workspace } from "../contracts/auth";
-import { defineEntity } from "../contracts/entity";
-import type { Row, Store } from "../contracts/store";
+import { defineEntity, type Row } from "../contracts/entity";
+import type { Store } from "../contracts/store";
 
 export const AUTH_SCOPE = { workspaceId: "_auth" } as const;
 export const SESSION_COOKIE = "texo_session";
