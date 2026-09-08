@@ -6,6 +6,7 @@ import {
   IconChevronDown,
   IconDotsVertical,
   IconLayoutGrid,
+  IconComponents,
   IconMoon,
   IconPalette,
   IconSun,
@@ -13,6 +14,7 @@ import {
 import * as BaseComponents from '@texo/ui';
 import {
   createElement,
+  useEffect,
   useState,
   type ComponentType,
   type PropsWithChildren,
@@ -29,8 +31,9 @@ import { AttioDashboardPage } from './attio-dashboard-page';
 import { CardsPage } from './cards-page';
 import { DashboardPage } from './dashboard-page';
 import { CustomComponentsPage } from './custom-components-page';
+import { CanvasLibrary, CanvasPage, CanvasProvider } from './canvas-page';
 import { ThemeControls } from './theme-controls';
-import { projectComponents } from '../extensions/registry';
+import { componentLibrary, projectComponents } from '../extensions/registry';
 
 const {
   BaseAccordion,
@@ -90,6 +93,7 @@ const componentNavigationItems = Object.entries(BaseComponents)
 
 const navigationItems = [
   { component: null, label: 'Theme', name: 'Theme', path: '/theme' },
+  { component: null, label: 'Canvas', name: 'Canvas', path: '/canvas' },
   { component: null, label: 'Dashboard', name: 'Dashboard', path: '/dashboard' },
   { component: null, label: 'Custom', name: 'Custom', path: '/custom' },
   ...componentNavigationItems,
@@ -322,6 +326,12 @@ export function App() {
   const navigate = useNavigate();
   const [panelEnabled, setPanelEnabled] = useState(false);
   const [propertyTab, setPropertyTab] = useState<string | null>('colors');
+  const [activeRail, setActiveRail] = useState<string | null>(
+    pathname === '/canvas' ? 'library' : 'theme',
+  );
+  useEffect(() => {
+    if (pathname === '/canvas') setActiveRail('library');
+  }, [pathname]);
   const {
     applyPreset,
     canRedo,
@@ -337,7 +347,7 @@ export function App() {
     navigationItems.find((item) => item.path === pathname) ??
     componentNavigationItems.find((item) => item.path === '/buttons');
   const visiblePreviews = navigationItems.filter((item) =>
-    ['/theme', '/dashboard', '/custom', '/buttons', '/cards', '/text-inputs'].includes(item.path),
+    ['/theme', '/canvas', '/dashboard', '/custom', '/buttons', '/cards', '/text-inputs'].includes(item.path),
   );
   const hiddenPreviews = navigationItems.filter(
     (item) => !visiblePreviews.includes(item),
@@ -395,7 +405,7 @@ export function App() {
         )}
       </BaseActionIcon>
       <BaseActionIcon
-        aria-label="Undo"
+        aria-label="Undo theme"
         disabled={!canUndo}
         variant="subtle"
         onClick={undo}
@@ -403,7 +413,7 @@ export function App() {
         <IconArrowBackUp size={16} />
       </BaseActionIcon>
       <BaseActionIcon
-        aria-label="Redo"
+        aria-label="Redo theme"
         disabled={!canRedo}
         variant="subtle"
         onClick={redo}
@@ -412,6 +422,7 @@ export function App() {
       </BaseActionIcon>
       <BaseActionIcon
         aria-label="Toggle panel"
+        disabled={pathname === '/canvas'}
         variant={panelEnabled ? 'light' : 'subtle'}
         onClick={() => setPanelEnabled((current) => !current)}
       >
@@ -549,6 +560,14 @@ export function App() {
 
   const rail = [
     {
+      body: <CanvasLibrary />,
+      header: <BaseText fw={600} px="sm" size="sm">Components</BaseText>,
+      icon: <IconComponents size={18} />,
+      id: 'library',
+      label: 'Components',
+      subheader: <BaseText c="dimmed" size="xs">Drag or add to canvas</BaseText>,
+    },
+    {
       body: themeSettings,
       header: themePicker,
       icon: <IconPalette size={18} />,
@@ -570,15 +589,21 @@ export function App() {
   ];
 
   return (
+    <CanvasProvider registry={componentLibrary}>
     <TexoAppShell
       actions={actions}
-      defaultRail="theme"
+      activeRail={activeRail}
+      onRailChange={(id) => {
+        setActiveRail(id);
+        if (id === 'library' && pathname !== '/canvas') navigate('/canvas');
+      }}
       previewTabs={previewTabs}
       rail={rail}
     >
       <Routes>
         <Route path="/" element={<Navigate to="/theme" replace />} />
         <Route path="/theme" element={<ThemePage />} />
+        <Route path="/canvas" element={<CanvasPage />} />
         <Route path="/cards" element={<CardsPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/dashboard/attio" element={<AttioDashboardPage />} />
@@ -601,7 +626,7 @@ export function App() {
       <TexoPanel
         gutter={0}
         onClose={() => setPanelEnabled(false)}
-        opened={panelEnabled}
+        opened={panelEnabled && pathname !== '/canvas'}
         title={`${selectedItem?.label ?? 'Component'} code`}
       >
         <BaseCodeHighlight
@@ -610,6 +635,7 @@ export function App() {
         />
       </TexoPanel>
     </TexoAppShell>
+    </CanvasProvider>
   );
 }
 
