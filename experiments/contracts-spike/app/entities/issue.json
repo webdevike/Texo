@@ -6,6 +6,19 @@
     { "name": "status", "kind": "enum", "options": ["backlog", "todo", "in_progress", "done"], "default": "backlog" },
     { "name": "priority", "kind": "number", "integer": true, "min": 0, "max": 4, "default": 0 },
     { "name": "done", "kind": "boolean", "default": false },
-    { "name": "notes", "kind": "string", "optional": true, "long": true }
+    { "name": "notes", "kind": "string", "optional": true, "long": true },
+    { "name": "project", "kind": "relation", "to": "project", "optional": true },
+    { "name": "assignee", "kind": "relation", "to": "member", "optional": true },
+    { "name": "due", "kind": "date", "optional": true },
+    {
+      "name": "checklist",
+      "kind": "group",
+      "repeatable": true,
+      "optional": true,
+      "fields": [
+        { "name": "text", "kind": "string" },
+        { "name": "done", "kind": "boolean", "default": false }
+      ]
+    }
   ]
 }

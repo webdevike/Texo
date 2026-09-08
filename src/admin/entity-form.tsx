@@ -1,45 +1,29 @@
-// Form rendered from entity.fields. No per-entity code.
-import { Button, Group, NumberInput, Select, Stack, Switch, Text, Textarea, TextInput } from "@mantine/core";
-import { useState } from "react";
-import type { Entity, FieldSpec, Input, Row } from "../../experiments/contracts-spike/contracts/entity";
-import { StoreValidationError } from "../../experiments/contracts-spike/contracts/store";
+// Form rendered from entity.fields. No per-entity code. Relation pickers search their target
+// through `store`; `resolveEntity` maps a relation's `to` onto the live entity registry.
+import { BaseButton, BaseGroup, BaseStack, BaseText } from '@texo/ui';
+import { useState } from 'react';
 
-function FieldControl({ field, value, onChange }: { field: FieldSpec; value: unknown; onChange: (v: unknown) => void }) {
-  const label = field.name;
-  const dflt = 'default' in field ? field.default : undefined;
-  const required = !field.optional && dflt === undefined;
-  switch (field.kind) {
-    case "string":
-      return field.long
-        ? <Textarea label={label} autosize minRows={3} value={typeof value === "string" ? value : ""} onChange={(e) => onChange(e.currentTarget.value)} required={required} />
-        : <TextInput label={label} value={typeof value === "string" ? value : ""} onChange={(e) => onChange(e.currentTarget.value)} required={required} />;
-    case "number":
-      // Mantine emits a string mid-typing (P1); the contract wants a number.
-      return <NumberInput label={label} min={field.min} max={field.max} allowDecimal={!field.integer} value={typeof value === "number" ? value : ""} onChange={(v) => onChange(v === "" ? undefined : typeof v === "string" ? Number(v) : v)} required={required} />;
-    case "boolean":
-      return <Switch label={label} checked={value === true} onChange={(e) => onChange(e.currentTarget.checked)} />;
-    case "enum":
-      return <Select label={label} data={field.options} value={typeof value === "string" ? value : null} onChange={(v) => onChange(v ?? undefined)} required={required} />;
-    case "date":
-      return <TextInput label={label} placeholder="YYYY-MM-DD" value={typeof value === "string" ? value : ""} onChange={(e) => onChange(e.currentTarget.value)} required={required} />;
-    case "relation":
-      // Placeholder until slice A ships the relation picker: raw id entry.
-      return <TextInput label={`${label} (id of ${field.to})`} value={typeof value === "string" ? value : ""} onChange={(e) => onChange(e.currentTarget.value)} required={required} />;
-    case "group":
-      return <Textarea label={`${label} (JSON)`} autosize minRows={2} value={value === undefined ? "" : JSON.stringify(value)} onChange={(e) => { try { onChange(e.currentTarget.value ? JSON.parse(e.currentTarget.value) : undefined); } catch { /* keep typing */ } }} />;
-  }
-}
+import type { Entity, Input, Row } from '../../experiments/contracts-spike/contracts/entity';
+import { type ClientStore, StoreValidationError } from '../../experiments/contracts-spike/contracts/store';
+import { compact, FieldControl, initialValue } from './fields/field-control';
 
 function initial(entity: Entity, row?: Row): Record<string, unknown> {
   const out: Record<string, unknown> = {};
-  for (const f of entity.fields) out[f.name] = row?.[f.name] ?? ('default' in f ? f.default : undefined) ?? (f.kind === "boolean" ? false : undefined);
+  for (const f of entity.fields) {
+    const v = row?.[f.name];
+    // Included single relations arrive as { id, title }; the form edits the id.
+    const included = f.kind === 'relation' && !f.many && v !== null && typeof v === 'object' && 'id' in v;
+    out[f.name] = included ? v.id : (v ?? initialValue(f));
+  }
   return out;
 }
 
-export function EntityForm({ entity, row, onSubmit, onCancel }: {
+export function EntityForm({ entity, row, store, resolveEntity, onSubmit, onCancel }: {
   entity: Entity;
   /** When present the form edits; otherwise it creates. */
   row?: Row;
+  store: ClientStore;
+  resolveEntity: (name: string) => Entity | undefined;
   onSubmit: (values: Input) => Promise<void>;
   onCancel: () => void;
 }) {
@@ -51,9 +35,9 @@ export function EntityForm({ entity, row, onSubmit, onCancel }: {
     setBusy(true);
     setError(undefined);
     try {
-      await onSubmit(Object.fromEntries(Object.entries(values).filter(([, v]) => v !== undefined && v !== "")));
+      await onSubmit(compact(entity.fields, values));
     } catch (e) {
-      if (e instanceof StoreValidationError) setError(e.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; "));
+      if (e instanceof StoreValidationError) setError(e.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; '));
       else setError(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
@@ -61,15 +45,23 @@ export function EntityForm({ entity, row, onSubmit, onCancel }: {
   }
 
   return (
-    <Stack gap="sm">
+    <BaseStack gap="sm">
       {entity.fields.map((f) => (
-        <FieldControl key={f.name} field={f} value={values[f.name]} onChange={(v) => setValues((s) => ({ ...s, [f.name]: v }))} />
+        <FieldControl ctx={{ store, resolveEntity }} field={f} key={f.name} onChange={(v) => setValues((s) => ({ ...s, [f.name]: v }))} value={values[f.name]} />
       ))}
-      {error && <Text c="red" size="sm">{error}</Text>}
-      <Group justify="flex-end" gap="xs">
-        <Button variant="subtle" onClick={onCancel}>Cancel</Button>
-        <Button onClick={submit} loading={busy}>{row ? "Save" : "Create"}</Button>
-      </Group>
-    </Stack>
+      {error && (
+        <BaseText c="red" size="sm">
+          {error}
+        </BaseText>
+      )}
+      <BaseGroup gap="xs" justify="flex-end">
+        <BaseButton onClick={onCancel} variant="subtle">
+          Cancel
+        </BaseButton>
+        <BaseButton loading={busy} onClick={submit}>
+          {row ? 'Save' : 'Create'}
+        </BaseButton>
+      </BaseGroup>
+    </BaseStack>
   );
 }

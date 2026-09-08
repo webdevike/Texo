@@ -1,20 +1,23 @@
 // One page per entity: table + create/edit modal. Talks to the ClientStore contract only.
 import { Button, Group, Modal, Stack, Title } from "@mantine/core";
 import { useCallback, useEffect, useState } from "react";
-import type { Entity, Row } from "../../experiments/contracts-spike/contracts/entity";
+import type { Entity, FieldSpec, Row } from "../../experiments/contracts-spike/contracts/entity";
 import type { ClientStore } from "../../experiments/contracts-spike/contracts/store";
 import { EntityForm } from "./entity-form";
 import { EntityTable } from "./entity-table";
 
 type Sort = { field: string; direction: "asc" | "desc" };
 
-export function EntityPage({ entity, store }: { entity: Entity; store: ClientStore }) {
+// W1Relations: `resolveEntity` lets relation pickers find their target; single relations are included on list.
+const singleRelations = (fields: FieldSpec[]) => fields.filter((f) => f.kind === "relation" && !f.many).map((f) => f.name);
+
+export function EntityPage({ entity, store, resolveEntity = () => undefined }: { entity: Entity; store: ClientStore; resolveEntity?: (name: string) => Entity | undefined }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [sort, setSort] = useState<Sort | undefined>();
   const [editing, setEditing] = useState<Row | "new" | undefined>();
 
   const refresh = useCallback(async () => {
-    setRows((await store.list(entity, sort ? { orderBy: sort, limit: 500 } : { limit: 500 })).rows);
+    setRows((await store.list(entity, { orderBy: sort, limit: 500, include: singleRelations(entity.fields) })).rows); // W1Relations
   }, [entity, store, sort]);
 
   useEffect(() => { void refresh(); }, [refresh]);
@@ -38,6 +41,8 @@ export function EntityPage({ entity, store }: { entity: Entity; store: ClientSto
               key={editing === "new" ? "new" : editing.id}
               entity={entity}
               row={editing === "new" ? undefined : editing}
+              store={store} // W1Relations
+              resolveEntity={resolveEntity} // W1Relations
               onCancel={close}
               onSubmit={async (values) => {
                 if (editing === "new") await store.create(entity, values);

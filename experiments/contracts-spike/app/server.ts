@@ -13,6 +13,7 @@ import { z } from "zod";
 import { createCookieAuth } from "../adapters/auth-cookie";
 import { storeHandler } from "../adapters/store-http";
 import { AuthError, type Session, scopeOf } from "../contracts/auth";
+import type { Entity } from "../contracts/entity";
 import { type Store, StoreSchemaError } from "../contracts/store";
 import { manifest } from "../host/manifest";
 import { readSetting, setting, writeSetting } from "../host/settings";
@@ -21,13 +22,30 @@ import { specsDir, store } from "./texo.config";
 
 const PORT = Number(process.env.TEXO_PORT ?? 4321);
 
-async function migrateAll(registry: Registry, store: Store) {
-  for (const entity of registry.all()) await store.migrate(entity);
+// W1Relations: migrate relation targets before the entities that reference them, so a spec
+// like issue -> project/member boots regardless of file order (sqlite refuses a relation to an
+// entity it has not seen yet).
+async function migrateAll(reg: Registry, s: Store) {
+  const done = new Set<string>();
+  const byName = new Map(reg.all().map((e) => [e.name, e]));
+  const visit = async (e: Entity, trail: Set<string>) => {
+    if (done.has(e.name) || trail.has(e.name)) return;
+    trail.add(e.name);
+    for (const f of e.fields) {
+      const target = f.kind === "relation" ? byName.get(f.to) : undefined;
+      if (target) await visit(target, trail);
+    }
+    if (!done.has(e.name)) await s.migrate(e);
+    done.add(e.name);
+  };
+  for (const e of byName.values()) await visit(e, new Set());
 }
+// end W1Relations
 
 await store.migrate(setting);
 const registry = createSpecRegistry(specsDir, store);
 await migrateAll(registry, store);
+
 
 const auth = createCookieAuth(store);
 if (await auth.empty()) {

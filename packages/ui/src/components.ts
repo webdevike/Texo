@@ -31,10 +31,14 @@ import {
     type ColorInputProps,
     Drawer,
     type DrawerProps,
+    Fieldset,
+    type FieldsetProps,
     Group,
     type GroupProps,
     Menu,
     type MenuProps,
+    MultiSelect,
+    type MultiSelectProps,
     InputBase,
     type InputBaseProps,
     NavLink,
@@ -87,10 +91,12 @@ export const BaseButton = Button;
 export const BaseCheckbox = Checkbox;
 export const BaseCard = Card;
 export const BaseDrawer = Drawer;
+export const BaseFieldset = Fieldset;
 export const BaseCenter = Center;
 export const BaseGroup = Group;
 export const BaseInputBase = InputBase;
 export const BaseMenu = Menu;
+export const BaseMultiSelect = MultiSelect;
 export const BaseNavLink = NavLink;
 export const BaseNumberInput = NumberInput;
 export const BaseSelect = Select;
@@ -119,6 +125,7 @@ export type BaseColorInputProps = ColorInputProps;
 export type BaseBoxProps = BoxProps;
 export type BaseButtonProps = ButtonProps;
 export type BaseDrawerProps = DrawerProps;
+export type BaseFieldsetProps = FieldsetProps;
 export type BaseComboboxProps = ComboboxProps;
 export type BaseComboboxPopoverProps = ComboboxPopoverProps;
 export type BaseCheckboxProps = CheckboxProps;
@@ -126,6 +133,7 @@ export type BaseCardProps = CardProps;
 export type BaseCenterProps = CenterProps;
 export type BaseGroupProps = GroupProps;
 export type BaseMenuProps = MenuProps;
+export type BaseMultiSelectProps = MultiSelectProps;
 export type BaseNavLinkProps = NavLinkProps;
 export type BaseSelectProps = SelectProps;
 export type BaseScrollerProps = ScrollerProps;
