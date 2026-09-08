@@ -1,5 +1,7 @@
 // Framework-owned settings persist through the SAME Store contract as app data (P6).
-// The theme is one row of the `_setting` entity, keyed by name.
+// The theme is one row of the `_setting` entity, keyed by name. Settings are per workspace:
+// the host passes the request's scoped store (scopeOf(session)), so each workspace owns its
+// own theme row and never sees another's.
 import { defineEntity } from "../contracts/entity";
 import type { Store } from "../contracts/store";
 

@@ -38,6 +38,7 @@ import { DashboardPage } from './dashboard-page';
 import { CustomComponentsPage } from './custom-components-page';
 import { ThemeControls } from './theme-controls';
 import { projectComponents } from '../extensions/registry';
+import { WorkspaceSwitcher } from '../admin/auth-gate';
 
 const {
   BaseAccordion,
@@ -56,6 +57,7 @@ const {
   BaseGroup,
   BaseMenu,
   BaseNavLink,
+  BaseNumberInput,
   BaseSelect,
   BaseScrollArea,
   BaseScroller,
@@ -269,6 +271,8 @@ function ComponentPreview({
       );
     case 'BaseText':
       return <BaseText>Text</BaseText>;
+    case 'BaseNumberInput':
+      return <BaseNumberInput label="Amount" placeholder="0" />;
     case 'BaseTextarea':
       return <BaseTextarea label="Notes" />;
     case 'BaseTextInput':
@@ -386,6 +390,7 @@ export function App() {
 
   const actions = (
     <BaseGroup gap="xs">
+      <WorkspaceSwitcher />
       <BaseActionIcon
         aria-label="Toggle color scheme"
         variant="subtle"
