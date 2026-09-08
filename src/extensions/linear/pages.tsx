@@ -1,5 +1,8 @@
 // Linear-lite pages: issues list (+ detail side panel), board, projects, project detail.
+// Every view is a live query over the app's collections: rows load once, SSE and optimistic
+// writes update the collection in place, and the queries re-evaluate locally. Nothing refetches.
 import { IconPlus } from '@tabler/icons-react';
+import { and, eq, gt, gte, ilike, inArray, isNull, isUndefined, lt, lte, not, or, useLiveQuery, type Collection, type ContextFromSource, type QueryBuilder } from '@tanstack/react-db';
 import {
   BaseBadge,
   BaseButton,
@@ -14,20 +17,30 @@ import {
   TexoFilterBar,
   filtersToWhere,
   useHotkeys,
+  type TexoDataTableSort,
   type TexoFilter,
   type TexoFilterField,
 } from '@texo/ui';
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useDeferredValue, useMemo, useState, type FormEvent } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
-import type { Entity, Row } from '../../../experiments/contracts-spike/contracts/entity';
+import type { Entity } from '../../../experiments/contracts-spike/contracts/entity';
 import type { Where } from '../../../experiments/contracts-spike/contracts/store';
-import { useList } from '../../admin/hooks/use-list';
-import { useLive } from '../../admin/hooks/use-live';
-import { useOptimistic } from '../../admin/hooks/use-optimistic';
 import { RelationField } from '../../admin/fields/relation';
 import { IssueDetail } from './issue-detail';
-import { liveStore, PRIORITY_LABEL, STATUS_KEY, STATUS_LABEL, STATUSES, useEntities } from './store';
+import { describeError, issuesOf, namedOf, patchRow, PRIORITY_LABEL, STATUS_KEY, STATUS_LABEL, STATUSES, store, useEntities, type IssueRow } from './store';
+import { notify, Toasts } from './toast';
+
+const PAGE = 200;
+
+/** Live `id -> name` lookup over a small relation target (members, projects, teams). */
+function useNames(entity: Entity | undefined) {
+  const { data } = useLiveQuery({
+    queryKey: ['names', entity?.name],
+    query: (q) => (entity ? q.from({ r: namedOf(entity) }) : undefined),
+  });
+  return useMemo(() => new Map((data ?? []).map((r) => [r.id, r.name])), [data]);
+}
 
 const COLUMNS = [
   { key: 'title', label: 'Title', width: 'minmax(280px, 2fr)' },
@@ -42,20 +55,69 @@ function cell(key: string, value: unknown) {
   if (value === undefined || value === null || value === '') return <BaseText c="dimmed" size="sm">-</BaseText>;
   if (key === 'status') return <BaseBadge size="sm" variant="light">{STATUS_LABEL[String(value)] ?? String(value)}</BaseBadge>;
   if (key === 'priority') return <BaseText size="sm">P{String(value)} {PRIORITY_LABEL[Number(value)] ?? ''}</BaseText>;
-  if (typeof value === 'object' && value && 'title' in value) return <BaseText size="sm">{String(value.title ?? '')}</BaseText>;
   return <BaseText size="sm" lineClamp={1}>{String(value)}</BaseText>;
+}
+
+type Expr = Parameters<typeof isNull>[0];
+type Cond = { op: string; value?: unknown };
+
+/**
+ * TexoFilterBar / fixed `Where` conditions as TanStack DB predicates over the row ref. `labels` is
+ * a many-relation (an array on the row) no operator covers; `filteredOf` applies it functionally.
+ */
+function predicatesOf(ref: Record<string, Expr>, where: Where): Expr[] {
+  const exprs: Expr[] = [];
+  for (const [field, raw] of Object.entries(where)) {
+    if (field === 'labels') continue;
+    const cond: Cond = raw && typeof raw === 'object' && 'op' in raw ? (raw as Cond) : { op: 'eq', value: raw };
+    const col = ref[field];
+    switch (cond.op) {
+      case 'eq': exprs.push(eq(col, cond.value)); break;
+      case 'ne': exprs.push(not(eq(col, cond.value))); break;
+      case 'in': exprs.push(inArray(col, cond.value as unknown[])); break;
+      case 'nin': exprs.push(not(inArray(col, cond.value as unknown[]))); break;
+      case 'lt': exprs.push(lt(col, cond.value)); break;
+      case 'lte': exprs.push(lte(col, cond.value)); break;
+      case 'gt': exprs.push(gt(col, cond.value)); break;
+      case 'gte': exprs.push(gte(col, cond.value)); break;
+      case 'contains': exprs.push(ilike(col as string, `%${String(cond.value)}%`)); break;
+      case 'isNull': exprs.push(or(isNull(col), isUndefined(col))); break;
+    }
+  }
+  return exprs;
+}
+
+type IssueQuery = QueryBuilder<ContextFromSource<{ i: Collection<IssueRow, string> }>>;
+
+/** Where chips, fixed conditions and the search box applied to an issue query. */
+function filteredOf(b: IssueQuery, where: Where, search: string): IssueQuery {
+  const fields = Object.keys(where);
+  const arrays = fields.filter((f) => f === 'labels');
+  let out = b;
+  if (search || fields.length > arrays.length) {
+    out = out.where(({ i }) => {
+      const exprs = predicatesOf(i as unknown as Record<string, Expr>, where);
+      if (search) exprs.push(ilike((i as unknown as IssueRow).title, `%${search}%`));
+      return exprs.length > 1 ? and(exprs[0], exprs[1], ...exprs.slice(2)) : exprs[0];
+    });
+  }
+  for (const field of arrays) {
+    const raw = where[field] as Cond | string;
+    const value = String(typeof raw === 'object' && raw ? raw.value : raw);
+    out = out.fn.where((row) => ((row as { i: IssueRow }).i[field] as string[] | undefined)?.includes(value) ?? false);
+  }
+  return out;
 }
 
 /** New issue modal, opened by `c` / `?new=1`. */
 function NewIssue({ entity, opened, onClose }: { entity: Entity; opened: boolean; onClose: () => void }) {
-  const { create } = useOptimistic(liveStore, entity);
   const { team } = useEntities();
   const [title, setTitle] = useState('');
   const [teamId, setTeamId] = useState<string | undefined>();
   const submit = (e: FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
-    void create({ title: title.trim(), team: teamId, status: 'todo', priority: 0 }).catch(() => undefined);
+    void store.create(entity, { title: title.trim(), team: teamId, status: 'todo', priority: 0 }).catch((err: unknown) => notify(describeError(err)));
     setTitle('');
     onClose();
   };
@@ -64,7 +126,7 @@ function NewIssue({ entity, opened, onClose }: { entity: Entity; opened: boolean
       <form onSubmit={submit}>
         <BaseStack gap="sm">
           <BaseTextInput autoFocus data-autofocus label="Title" onChange={(e) => setTitle(e.currentTarget.value)} value={title} />
-          <RelationField label="Team" onChange={setTeamId} store={liveStore} target={team} value={teamId} />
+          <RelationField label="Team" onChange={setTeamId} store={store} target={team} value={teamId} />
           <BaseButton type="submit">Create</BaseButton>
         </BaseStack>
       </form>
@@ -81,57 +143,67 @@ function useNewIssueRoute() {
 
 /** Selection keys on the issue list and board: 1..5 priority, s <letter> status, a assign. */
 function useIssueKeys(entity: Entity, selectedId: string | undefined, onAssign: () => void) {
-  const { update } = useOptimistic(liveStore, entity);
   const commands = useMemo(
     () => [
-      ...[1, 2, 3, 4, 5].map((n) => ({ id: `linear.prio.${n}`, keys: String(n), when: () => !!selectedId, run: () => void update(selectedId!, { priority: n - 1 }).catch(() => undefined) })),
-      ...Object.entries(STATUS_KEY).map(([k, status]) => ({ id: `linear.status.${status}`, keys: `s ${k}`, when: () => !!selectedId, run: () => void update(selectedId!, { status }).catch(() => undefined) })),
+      ...[1, 2, 3, 4, 5].map((n) => ({ id: `linear.prio.${n}`, keys: String(n), when: () => !!selectedId, run: () => patchRow(entity, selectedId!, { priority: n - 1 }) })),
+      ...Object.entries(STATUS_KEY).map(([k, status]) => ({ id: `linear.status.${status}`, keys: `s ${k}`, when: () => !!selectedId, run: () => patchRow(entity, selectedId!, { status }) })),
       { id: 'linear.assign', keys: 'a', when: () => !!selectedId, run: onAssign },
     ],
-    [update, selectedId, onAssign],
+    [entity, selectedId, onAssign],
   );
   useHotkeys(commands);
 }
 
 export function IssuesPage({ where: fixedWhere }: { where?: Where } = {}) {
-  const { issue, all } = useEntities();
-  return issue ? <IssuesList entity={issue} entities={all} fixedWhere={fixedWhere} /> : null;
+  const { issue } = useEntities();
+  return issue ? <IssuesList entity={issue} fixedWhere={fixedWhere} /> : null;
 }
 
-function IssuesList({ entity, entities, fixedWhere }: { entity: Entity; entities: Entity[]; fixedWhere?: Where }) {
+const DEFAULT_SORT: TexoDataTableSort[] = [{ field: 'priority', direction: 'desc' }];
+
+function IssuesList({ entity, fixedWhere }: { entity: Entity; fixedWhere?: Where }) {
   const navigate = useNavigate();
   const { id: routeId } = useParams();
   const { pathname } = useLocation();
-  const initial = useMemo(() => ({ where: fixedWhere, orderBy: [{ field: 'priority', direction: 'desc' as const }], limit: 200, include: ['assignee', 'project'] }), [fixedWhere]);
-  const list = useList(liveStore, entity, initial);
+  const { member, project } = useEntities();
   const [filters, setFilters] = useState<TexoFilter[]>([]);
+  const [search, setSearch] = useState('');
+  const query = useDeferredValue(search.trim());
+  const [sort, setSort] = useState<TexoDataTableSort[]>(DEFAULT_SORT);
+  const [visible, setVisible] = useState(PAGE);
   const [selected, setSelected] = useState<string[]>([]);
   const [assigning, setAssigning] = useState(false);
   const newIssue = useNewIssueRoute();
-  const { update } = useOptimistic(liveStore, entity);
   const listBase = fixedWhere ? pathname.replace(/\/issues\/.*$/, '') : '';
   const openId = fixedWhere ? undefined : routeId;
+  const where = useMemo(() => ({ ...fixedWhere, ...filtersToWhere(filters) }) as Where, [fixedWhere, filters]);
+  const whereKey = JSON.stringify(where);
+
+  // The visible page and its total are two live queries over the same predicates; the second
+  // has no limit, so the header is the true size of the filtered collection.
+  const page = useLiveQuery({
+    queryKey: ['issues', entity.name, whereKey, query, visible, sort],
+    query: (q) => {
+      let b = filteredOf(q.from({ i: issuesOf(entity) }), where, query);
+      for (const s of sort.length ? sort : DEFAULT_SORT) b = b.orderBy(({ i }) => (i as unknown as Record<string, Expr>)[s.field], s.direction);
+      return b.limit(visible);
+    },
+  });
+  const total = useLiveQuery({
+    queryKey: ['issues-total', entity.name, whereKey, query],
+    query: (q) => filteredOf(q.from({ i: issuesOf(entity) }), where, query),
+  });
+  const rows = page.data ?? [];
+  const totalCount = total.data?.length ?? 0;
+  const memberNames = useNames(member);
+  const projectNames = useNames(project);
 
   const fields: TexoFilterField[] = useMemo(
     () => entity.fields.filter((f) => ['status', 'priority', 'assignee', 'project', 'labels', 'team'].includes(f.name)).map((f) => ({ name: f.name, kind: f.kind === 'relation' ? 'relation' : f.kind === 'enum' ? 'enum' : 'number', label: f.name, options: f.kind === 'enum' ? f.options : undefined })),
     [entity],
   );
 
-  // Change events (own writes and SSE) refetch the visible page, debounced so a merge of many rows
-  // does not refetch once per row.
-  useEffect(() => {
-    let timer: number | undefined;
-    const unsub = liveStore.subscribe(entity, () => {
-      window.clearTimeout(timer);
-      timer = window.setTimeout(() => list.refetch(), 400);
-    });
-    return () => { window.clearTimeout(timer); unsub(); };
-  }, [entity, list.refetch]);
-
-  const sort = useMemo(() => {
-    const o = list.query.orderBy;
-    return Array.isArray(o) ? o : o ? [o] : [];
-  }, [list.query.orderBy]);
+  const loadMore = useCallback(() => setVisible((v) => (v < totalCount ? v + PAGE : v)), [totalCount]);
 
   const selectedId = selected[0];
   useIssueKeys(entity, selectedId, useCallback(() => setAssigning(true), []));
@@ -141,9 +213,8 @@ function IssuesList({ entity, entities, fixedWhere }: { entity: Entity; entities
     { id: 'linear.list.open', keys: 'enter', when: () => !!selectedId && !openId, run: () => navigate(`${listBase}/issues/${selectedId}`) },
     { id: 'linear.search', keys: '/', run: () => (document.querySelector('input[placeholder="Search issues"]') as HTMLInputElement | null)?.focus() },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  ], [selectedId, openId, list.rows]));
+  ], [selectedId, openId, rows]));
   function move(delta: number) {
-    const rows = list.rows;
     if (!rows.length) return;
     const at = rows.findIndex((r) => r.id === selectedId);
     const next = Math.max(0, Math.min(rows.length - 1, at + delta));
@@ -151,7 +222,6 @@ function IssuesList({ entity, entities, fixedWhere }: { entity: Entity; entities
     document.querySelector(`[role="row"][aria-rowindex="${next + 1}"]`)?.scrollIntoView({ block: 'nearest' });
   }
 
-  const member = entities.find((e) => e.name === 'member');
   return (
     <BaseGroup align="stretch" gap={0} style={{ height: 'calc(100vh - 120px)' }} wrap="nowrap">
       <BaseStack gap="sm" style={{ flex: 1, minWidth: 0 }}>
@@ -160,33 +230,40 @@ function IssuesList({ entity, entities, fixedWhere }: { entity: Entity; entities
           fields={fields}
           filters={filters}
           noun="issue"
-          onFiltersChange={(f) => { setFilters(f); list.setWhere({ ...fixedWhere, ...filtersToWhere(f) } as Where); }}
-          onSearchChange={list.setSearch}
-          search={list.query.search ?? ''}
+          onFiltersChange={(f) => { setFilters(f); setVisible(PAGE); }}
+          onSearchChange={(s) => { setSearch(s); setVisible(PAGE); }}
+          search={search}
           searchPlaceholder="Search issues"
-          total={list.total}
+          total={totalCount}
         />
         <div style={{ flex: 1, minHeight: 0 }}>
           <TexoDataTable
             columns={COLUMNS}
-            loading={list.loading}
-            onEndReached={list.loadMore}
+            loading={page.isLoading}
+            onEndReached={loadMore}
             onOpen={(row) => { setSelected([row.id]); navigate(`${listBase}/issues/${row.id}`); }}
             onSelectedChange={setSelected}
-            onSortChange={(s) => list.setOrderBy(s)}
-            renderCell={(c, v) => cell(c.key, v)}
-            rows={list.rows}
+            onSortChange={setSort}
+            renderCell={(c, v) => cell(c.key, c.key === 'assignee' ? memberNames.get(String(v)) : c.key === 'project' ? projectNames.get(String(v)) : v)}
+            rows={rows}
             selectable
             selected={selected}
             sort={sort}
           />
         </div>
+        {rows.length < totalCount && (
+          <BaseGroup gap="sm" justify="center">
+            <BaseText c="dimmed" size="xs">{rows.length.toLocaleString()} of {totalCount.toLocaleString()}</BaseText>
+            <BaseButton data-load-more onClick={loadMore} size="xs" variant="subtle">Load more</BaseButton>
+          </BaseGroup>
+        )}
       </BaseStack>
       {openId && <IssueDetail entity={entity} id={openId} onClose={() => navigate('/issues')} />}
       <NewIssue entity={entity} onClose={newIssue.close} opened={newIssue.opened} />
       <BaseModal onClose={() => setAssigning(false)} opened={assigning} title="Assign">
-        <RelationField label="Assignee" onChange={(id) => { if (selectedId) void update(selectedId, { assignee: id }).catch(() => undefined); setAssigning(false); }} store={liveStore} target={member} value={undefined} />
+        <RelationField label="Assignee" onChange={(id) => { if (selectedId) patchRow(entity, selectedId, { assignee: id }); setAssigning(false); }} store={store} target={member} value={undefined} />
       </BaseModal>
+      <Toasts />
     </BaseGroup>
   );
 }
@@ -198,23 +275,37 @@ export function BoardPage() {
 
 function Board({ entity }: { entity: Entity }) {
   const navigate = useNavigate();
-  const { update } = useOptimistic(liveStore, entity);
   const newIssue = useNewIssueRoute();
-  const cols = STATUSES.map((s) => ({ id: s, label: STATUS_LABEL[s], ...useLive(liveStore, entity, { where: { status: s }, orderBy: [{ field: 'priority', direction: 'desc' }], limit: 50 }) }));
+  const [selectedId, setSelectedId] = useState<string | undefined>();
+  const [assigning, setAssigning] = useState(false);
+  const { member } = useEntities();
+  // STATUSES is a fixed tuple, so the hook order is stable across renders.
+  const columns = STATUSES.map((status) => {
+    const { data } = useLiveQuery({
+      queryKey: ['board', entity.name, status],
+      query: (q) => q.from({ i: issuesOf(entity) }).where(({ i }) => eq(i.status, status)).orderBy(({ i }) => i.priority, 'desc'),
+    });
+    return { id: status, label: STATUS_LABEL[status], cards: data, total: data.length };
+  });
+  useIssueKeys(entity, selectedId, useCallback(() => setAssigning(true), []));
   return (
     <div style={{ height: 'calc(100vh - 120px)' }}>
       <TexoBoard
-        columns={cols.map((c) => ({ id: c.id, label: c.label, cards: c.rows, total: c.total }))}
-        onMove={(id, status) => void update(id, { status }).catch(() => undefined)}
-        onOpen={(card) => navigate(`/issues/${card.id}`)}
-        renderCard={(card: Row) => (
+        columns={columns}
+        onMove={(id, status) => patchRow(entity, id, { status })}
+        onOpen={(card) => { setSelectedId(card.id); navigate(`/issues/${card.id}`); }}
+        renderCard={(card) => (
           <BaseStack gap={2}>
-            <BaseText size="sm" lineClamp={2}>{String(card.title)}</BaseText>
-            <BaseText c="dimmed" size="xs">P{String(card.priority)} {PRIORITY_LABEL[Number(card.priority)] ?? ''}</BaseText>
+            <BaseText size="sm" lineClamp={2}>{card.title}</BaseText>
+            <BaseText c="dimmed" size="xs">P{card.priority} {PRIORITY_LABEL[card.priority] ?? ''}</BaseText>
           </BaseStack>
         )}
       />
       <NewIssue entity={entity} onClose={newIssue.close} opened={newIssue.opened} />
+      <BaseModal onClose={() => setAssigning(false)} opened={assigning} title="Assign">
+        <RelationField label="Assignee" onChange={(id) => { if (selectedId) patchRow(entity, selectedId, { assignee: id }); setAssigning(false); }} store={store} target={member} value={undefined} />
+      </BaseModal>
+      <Toasts />
     </div>
   );
 }
@@ -226,15 +317,20 @@ export function ProjectsPage() {
 
 function Projects({ entity }: { entity: Entity }) {
   const navigate = useNavigate();
-  const { rows, total } = useLive(liveStore, entity, { orderBy: [{ field: 'name', direction: 'asc' }], include: ['team'] });
+  const { team } = useEntities();
+  const teamNames = useNames(team);
+  const { data } = useLiveQuery({
+    queryKey: ['projects', entity.name],
+    query: (q) => q.from({ p: namedOf(entity) }).orderBy(({ p }) => p.name, 'asc'),
+  });
   return (
     <BaseStack gap="sm">
-      <BaseGroup gap={6}><BaseTitle order={4}>Projects</BaseTitle><BaseText c="dimmed" size="sm">{total}</BaseText></BaseGroup>
+      <BaseGroup gap={6}><BaseTitle order={4}>Projects</BaseTitle><BaseText c="dimmed" size="sm">{data.length}</BaseText></BaseGroup>
       <TexoDataTable
         columns={[{ key: 'name', label: 'Name' }, { key: 'status', label: 'Status', width: 130 }, { key: 'team', label: 'Team', width: 160 }]}
         onOpen={(row) => navigate(`/projects/${row.id}`)}
-        renderCell={(c, v) => cell(c.key, v)}
-        rows={rows}
+        renderCell={(c, v) => cell(c.key, c.key === 'team' ? teamNames.get(String(v)) : v)}
+        rows={data}
       />
     </BaseStack>
   );
@@ -243,16 +339,15 @@ function Projects({ entity }: { entity: Entity }) {
 export function ProjectPage() {
   const { id } = useParams();
   const { project } = useEntities();
-  const [row, setRow] = useState<Row | undefined>();
-  useEffect(() => {
-    if (!project || !id) return;
-    return liveStore.watch(project, { where: { id }, limit: 1 }, ({ rows }) => setRow(rows[0]));
-  }, [project, id]);
+  const { data: row } = useLiveQuery({
+    queryKey: ['project', id],
+    query: (q) => (project && id ? q.from({ p: namedOf(project) }).where(({ p }) => eq(p.id, id)).findOne() : undefined),
+  });
   const where = useMemo(() => ({ project: id }), [id]);
   return (
     <BaseStack gap="sm" style={{ height: '100%' }}>
       <BaseStack gap={0}>
-        <BaseTitle order={4}>{row ? String(row.name) : 'Project'}</BaseTitle>
+        <BaseTitle order={4}>{row ? row.name : 'Project'}</BaseTitle>
         {row && <BaseText c="dimmed" size="sm">{STATUS_LABEL[String(row.status)] ?? String(row.status)}</BaseText>}
       </BaseStack>
       <IssuesPage where={where} />

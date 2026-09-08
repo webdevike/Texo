@@ -167,6 +167,8 @@ import {
     type DividerProps,
     Loader,
     type LoaderProps,
+    Notification,
+    type NotificationProps,
     Pill,
     type PillProps,
     Popover,
@@ -176,11 +178,13 @@ import {
 export const BaseCloseButton = CloseButton;
 export const BaseDivider = Divider;
 export const BaseLoader = Loader;
+export const BaseNotification = Notification;
 export const BasePill = Pill;
 export const BasePopover = Popover;
 
 export type BaseCloseButtonProps = CloseButtonProps;
 export type BaseDividerProps = DividerProps;
 export type BaseLoaderProps = LoaderProps;
+export type BaseNotificationProps = NotificationProps;
 export type BasePillProps = PillProps;
 export type BasePopoverProps = PopoverProps;

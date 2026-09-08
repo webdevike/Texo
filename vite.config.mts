@@ -8,15 +8,17 @@ export default defineConfig(() => ({
   root: import.meta.dirname,
   cacheDir: './node_modules/.vite/Texo',
   server: {
-    port: 4200,
+    port: 4251,
     host: 'localhost',
-    proxy: { '/api': 'http://127.0.0.1:4321' },
+    proxy: { '/api': 'http://127.0.0.1:4351' },
   },
   preview: {
     port: 4300,
     host: 'localhost',
   },
   plugins: [react(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])],
+  // The spike carries its own node_modules; one @tanstack/db instance or `instanceof Collection` fails across the boundary.
+  resolve: { dedupe: ['@tanstack/db', '@tanstack/react-db', '@tanstack/query-core', '@tanstack/query-db-collection'] },
   // Uncomment this if you are using workers.
   // worker: {
   //   plugins: () => [ nxViteTsPaths() ],
