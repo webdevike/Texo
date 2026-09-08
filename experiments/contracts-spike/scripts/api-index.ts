@@ -30,9 +30,8 @@ const USAGE: Record<string, string> = {
   useTexoTheme: `const { config, updateConfig, applyPreset } = useTexoTheme(); config.sidebar.density; config.table.striped; config.chartColors[0]`,
   TexoThemeProvider: `main.tsx owns it; read via useTexoTheme()`,
   useList: `const list = useList(store, entity, { orderBy: { field: "priority", direction: "desc" }, limit: 100 }); list.rows, list.total, list.setSearch, list.setWhere, list.setSort, list.loadMore, list.refetch`,
-  useLive: `const { rows, total } = useLive(liveStore, entity, { where: { status: "todo" } });  // re-evaluates locally on every ChangeEvent`,
-  useOptimistic: `const { create, update, remove, pending } = useOptimistic(liveStore, entity); await update(id, { status: "done" })  // rolls back on 422`,
-  createLiveStore: `const store = createLiveStore(createHttpStore("/api", { origin: "tab-" + crypto.randomUUID() }));  // one per app; subscribe(null) once; watch(entity, query, cb)`,
+  createCollections: `const cols = createCollections(createHttpStore("/api", { origin }));  // ONE per app. cols.collection(entity) -> TanStack DB Collection (toArray, get, insert/update/delete = optimistic, rollback on reject); cols.store = ClientStore facade; SSE applied automatically, never refetch on change`,
+  plain: `plain(row)  // strip TanStack DB virtual props ($key, $synced...) before handing a collection row to the contract`,
   createHttpStore: `createHttpStore("/api", { origin })  // ClientStore over the host; SSE at /api/_events`,
   useSession: `const { session, refresh } = useSession(); session.user.id; session.workspace.id`,
   useManifest: `const manifest = useManifest(); entitiesOf(manifest).find((e) => e.name === "issue")`,
@@ -51,7 +50,7 @@ const SOURCES = [
   "src/admin",
   "src/extensions/backend",
   "experiments/contracts-spike/contracts",
-  "experiments/contracts-spike/adapters/store-live.ts",
+  "experiments/contracts-spike/adapters/store-collections.ts",
   "experiments/contracts-spike/adapters/store-http.ts",
 ];
 
@@ -127,7 +126,7 @@ description: Building an app or extension on Texo. Read this before opening any 
 
 Layout: \`packages/ui\` = @texo/ui (Mantine Base* aliases + primitives). \`src/admin\` = hooks, field editors, host client, auth. \`src/extensions/<name>/index.ts\` = extensions (default export \`defineExtension\`). \`experiments/contracts-spike/contracts\` = Entity/Store/Extension/Auth contracts. Entities are JSON specs in \`experiments/contracts-spike/app/entities/*.json\`, migrated by the host at boot; the client reads them from \`host.manifest()\`.
 
-Rules: Mantine only via \`Base*\` aliases from \`@texo/ui\` (add a missing alias in \`packages/ui/src/components.ts\`). Icons from \`@tabler/icons-react\`. Every store call takes an \`Entity\` (from \`entitiesOf(manifest)\`), never a name. Field kinds: string | number | boolean | enum | date | relation{to,many?} | group{fields,repeatable?}. \`list()\` returns \`{ rows, total }\`; \`where\` values are bare (eq) or \`{ op, value }\` with op in eq ne in nin lt lte gt gte contains isNull. There is no board primitive yet: build one with @dnd-kit/core (DndContext, useDroppable per column, useDraggable per card) over an enum field and call useOptimistic().update on drop. Realtime: one \`createLiveStore\` per app, \`useLive\` for lists, \`useOptimistic\` for writes. Keys: \`CommandContribution.keys\` ("c", "mod+k", "g i"), bound by \`useHotkeys\`; \`?\` help and \`mod+k\` palette already exist in \`src/app/commands.tsx\`.
+Rules: Mantine only via \`Base*\` aliases from \`@texo/ui\` (add a missing alias in \`packages/ui/src/components.ts\`). Icons from \`@tabler/icons-react\`. Every store call takes an \`Entity\` (from \`entitiesOf(manifest)\`), never a name. Field kinds: string | number | boolean | enum | date | relation{to,many?} | group{fields,repeatable?}. \`list()\` returns \`{ rows, total }\`; \`where\` values are bare (eq) or \`{ op, value }\` with op in eq ne in nin lt lte gt gte contains isNull. There is no board primitive yet: build one with @dnd-kit/core (DndContext, useDroppable per column, useDraggable per card) over an enum field and call useOptimistic().update on drop. Realtime: one \`createCollections(createHttpStore(...))\` per app; views read with \`useLiveQuery\` from \`@tanstack/react-db\` over \`cols.collection(entity)\` (client-side where/orderBy/limit, joins across collections); writes are \`collection.update(id, draft => ...)\` / \`insert\` / \`delete\`, optimistic with rollback built in. Never refetch on a change event. Keys: \`CommandContribution.keys\` ("c", "mod+k", "g i"), bound by \`useHotkeys\`; \`?\` help and \`mod+k\` palette already exist in \`src/app/commands.tsx\`.
 
 ## Components (@texo/ui and src/admin)
 ${byKind("component").map(line).join("\n")}

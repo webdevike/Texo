@@ -7,7 +7,7 @@ description: Building an app or extension on Texo. Read this before opening any 
 
 Layout: `packages/ui` = @texo/ui (Mantine Base* aliases + primitives). `src/admin` = hooks, field editors, host client, auth. `src/extensions/<name>/index.ts` = extensions (default export `defineExtension`). `experiments/contracts-spike/contracts` = Entity/Store/Extension/Auth contracts. Entities are JSON specs in `experiments/contracts-spike/app/entities/*.json`, migrated by the host at boot; the client reads them from `host.manifest()`.
 
-Rules: Mantine only via `Base*` aliases from `@texo/ui` (add a missing alias in `packages/ui/src/components.ts`). Icons from `@tabler/icons-react`. Every store call takes an `Entity` (from `entitiesOf(manifest)`), never a name. Field kinds: string | number | boolean | enum | date | relation{to,many?} | group{fields,repeatable?}. `list()` returns `{ rows, total }`; `where` values are bare (eq) or `{ op, value }` with op in eq ne in nin lt lte gt gte contains isNull. There is no board primitive yet: build one with @dnd-kit/core (DndContext, useDroppable per column, useDraggable per card) over an enum field and call useOptimistic().update on drop. Realtime: one `createLiveStore` per app, `useLive` for lists, `useOptimistic` for writes. Keys: `CommandContribution.keys` ("c", "mod+k", "g i"), bound by `useHotkeys`; `?` help and `mod+k` palette already exist in `src/app/commands.tsx`.
+Rules: Mantine only via `Base*` aliases from `@texo/ui` (add a missing alias in `packages/ui/src/components.ts`). Icons from `@tabler/icons-react`. Every store call takes an `Entity` (from `entitiesOf(manifest)`), never a name. Field kinds: string | number | boolean | enum | date | relation{to,many?} | group{fields,repeatable?}. `list()` returns `{ rows, total }`; `where` values are bare (eq) or `{ op, value }` with op in eq ne in nin lt lte gt gte contains isNull. There is no board primitive yet: build one with @dnd-kit/core (DndContext, useDroppable per column, useDraggable per card) over an enum field and call useOptimistic().update on drop. Realtime: one `createCollections(createHttpStore(...))` per app; views read with `useLiveQuery` from `@tanstack/react-db` over `cols.collection(entity)` (client-side where/orderBy/limit, joins across collections); writes are `collection.update(id, draft => ...)` / `insert` / `delete`, optimistic with rollback built in. Never refetch on a change event. Keys: `CommandContribution.keys` ("c", "mod+k", "g i"), bound by `useHotkeys`; `?` help and `mod+k` palette already exist in `src/app/commands.tsx`.
 
 ## Components (@texo/ui and src/admin)
 - `AdminContent({ manifest }: { manifest: Manifest })`  <sub>src/admin/admin-pages.tsx</sub>
@@ -34,6 +34,7 @@ Rules: Mantine only via `Base*` aliases from `@texo/ui` (add a missing alias in 
 - `TEXO_THEME_PRESETS: TexoThemePreset[] = [ preset('default', 'Default', {}),`  <sub>packages/ui/src/texo-theme-provider.tsx</sub>
 - `TexoAppShell({ actions, activeRail: controlledRail, children, defaultRail = null, onRailChange, previewTabs, rail, }: TexoAppShellProps)`  <sub>packages/ui/src/texo-app-shell.tsx</sub>
   - use: `app.tsx owns the shell; extensions add rail content via nav contributions, not by rendering TexoAppShell`
+- `TexoBoard<T extends { id: string }>({ columns, renderCard, onMove, onOpen }: TexoBoardProps<T>)`  <sub>packages/ui/src/texo-board.tsx</sub>
 - `TexoCommandPalette({ items, onClose, onRun, opened, placeholder = 'Type a command' }: TexoCommandPaletteProps)`  <sub>packages/ui/src/texo-command-palette.tsx</sub>
   - use: `<TexoCommandPalette opened={open} onClose={close} items={commands.map((c) => ({ id: c.id, label: c.label, group: c.group, keys: c.keys }))} onRun={(item) => byId[item.id].run({ navigate, pathname })} />`
 - `TexoComponent({ id, props, registry, }: { id: string; props?: Record<string, unknown>; registry: TexoComponentRegistry; })`  <sub>packages/ui/src/texo-component.tsx</sub>
@@ -63,11 +64,9 @@ Rules: Mantine only via `Base*` aliases from `@texo/ui` (add a missing alias in 
 - `useList(store: ClientStore, entity: Entity, initial: ListQuery = {}, searchDebounceMs = 200): ListHandle`  <sub>src/admin/hooks/use-list.ts</sub>
   - use: `const list = useList(store, entity, { orderBy: { field: "priority", direction: "desc" }, limit: 100 }); list.rows, list.total, list.setSearch, list.setWhere, list.setSort, list.loadMore, list.refetch`
 - `useLive(store: ClientStore, entity: Entity, query: ListQuery = {}): LiveResult`  <sub>src/admin/hooks/use-live.ts</sub>
-  - use: `const { rows, total } = useLive(liveStore, entity, { where: { status: "todo" } });  // re-evaluates locally on every ChangeEvent`
 - `useManifest = ()`  <sub>src/extensions/backend/index.ts</sub>
   - use: `const manifest = useManifest(); entitiesOf(manifest).find((e) => e.name === "issue")`
 - `useOptimistic(store: ClientStore, entity: Entity): OptimisticWrites`  <sub>src/admin/hooks/use-optimistic.ts</sub>
-  - use: `const { create, update, remove, pending } = useOptimistic(liveStore, entity); await update(id, { status: "done" })  // rolls back on 422`
 - `useSession(): SessionValue`  <sub>src/admin/auth-gate.tsx</sub>
   - use: `const { session, refresh } = useSession(); session.user.id; session.workspace.id`
 - `useTexoTheme()`  <sub>packages/ui/src/texo-theme-provider.tsx</sub>
@@ -81,10 +80,10 @@ Rules: Mantine only via `Base*` aliases from `@texo/ui` (add a missing alias in 
 - `compact(fields: FieldSpec[], values: Record<string, unknown>): Record<string, unknown>`  <sub>src/admin/fields/field-control.tsx</sub>
 - `conditionOf(value: unknown): Condition`  <sub>experiments/contracts-spike/contracts/store.ts</sub>
 - `createChangeBus(): ChangeBus`  <sub>experiments/contracts-spike/contracts/store.ts</sub>
+- `createCollections(inner: ClientStore, options: CollectionsOptions = {}): Collections`  <sub>experiments/contracts-spike/adapters/store-collections.ts</sub>
+  - use: `const cols = createCollections(createHttpStore("/api", { origin }));  // ONE per app. cols.collection(entity) -> TanStack DB Collection (toArray, get, insert/update/delete = optimistic, rollback on reject); cols.store = ClientStore facade; SSE applied automatically, never refetch on change`
 - `createHttpStore(baseUrl: string, options: HttpStoreOptions = {}): ClientStore`  <sub>experiments/contracts-spike/adapters/store-http.ts</sub>
   - use: `createHttpStore("/api", { origin })  // ClientStore over the host; SSE at /api/_events`
-- `createLiveStore(inner: ClientStore, options: LiveStoreOptions = {}): LiveStore`  <sub>experiments/contracts-spike/adapters/store-live.ts</sub>
-  - use: `const store = createLiveStore(createHttpStore("/api", { origin: "tab-" + crypto.randomUUID() }));  // one per app; subscribe(null) once; watch(entity, query, cb)`
 - `cycleSort(current: readonly TexoDataTableSort[], field: string, additive: boolean): TexoDataTableSort[]`  <sub>packages/ui/src/texo-data-table.tsx</sub>
 - `defineEntity(spec: EntitySpec): Entity`  <sub>experiments/contracts-spike/contracts/entity.ts</sub>
 - `defineExtension(def: ExtensionDefinition): ExtensionDefinition`  <sub>experiments/contracts-spike/contracts/extension.ts</sub>
@@ -103,11 +102,12 @@ Rules: Mantine only via `Base*` aliases from `@texo/ui` (add a missing alias in 
 - `isEditable(target: EventTarget | null)`  <sub>packages/ui/src/texo-hotkeys.ts</sub>
 - `json(body: unknown): RequestInit`  <sub>src/admin/client.ts</sub>
 - `keysOf(command: { keys?: string | string[] }): string[]`  <sub>packages/ui/src/texo-hotkeys.ts</sub>
-- `liveOf(store: ClientStore): LiveStore`  <sub>experiments/contracts-spike/adapters/store-live.ts</sub>
 - `ok<T = unknown>(res: Response): Promise<T>`  <sub>src/admin/client.ts</sub>
 - `orderOf(query: ListQuery):`  <sub>experiments/contracts-spike/contracts/store.ts</sub>
 - `parseChord(text: string): Chord`  <sub>packages/ui/src/texo-hotkeys.ts</sub>
 - `parseSequence(keys: string): Chord[]`  <sub>packages/ui/src/texo-hotkeys.ts</sub>
+- `plain(row: object): Row`  <sub>experiments/contracts-spike/adapters/store-collections.ts</sub>
+  - use: `plain(row)  // strip TanStack DB virtual props ($key, $synced...) before handing a collection row to the contract`
 - `rankItems(items: TexoPaletteItem[], query: string): Match[]`  <sub>packages/ui/src/texo-command-palette.tsx</sub>
 - `scopeOf(session: Session): Scope`  <sub>experiments/contracts-spike/contracts/auth.ts</sub>
 - `specOf(entity: Entity): EntitySpec`  <sub>experiments/contracts-spike/contracts/entity.ts</sub>
@@ -128,6 +128,9 @@ Rules: Mantine only via `Base*` aliases from `@texo/ui` (add a missing alias in 
 - `ChangeKind = "created" | "updated" | "removed";`  <sub>experiments/contracts-spike/contracts/store.ts</sub>
 - `Chord {`  <sub>packages/ui/src/texo-hotkeys.ts</sub>
 - `ClientStore {`  <sub>experiments/contracts-spike/contracts/store.ts</sub>
+- `CollectionRow = Row;`  <sub>experiments/contracts-spike/adapters/store-collections.ts</sub>
+- `Collections {`  <sub>experiments/contracts-spike/adapters/store-collections.ts</sub>
+- `CollectionsOptions {`  <sub>experiments/contracts-spike/adapters/store-collections.ts</sub>
 - `CommandContribution {`  <sub>experiments/contracts-spike/contracts/extension.ts</sub>
 - `Condition = { op: Op; value?: unknown };`  <sub>experiments/contracts-spike/contracts/store.ts</sub>
 - `Entity extends EntitySpec {`  <sub>experiments/contracts-spike/contracts/entity.ts</sub>
@@ -144,8 +147,6 @@ Rules: Mantine only via `Base*` aliases from `@texo/ui` (add a missing alias in 
 - `ListQuery {`  <sub>experiments/contracts-spike/contracts/store.ts</sub>
 - `ListState {`  <sub>src/admin/hooks/use-list.ts</sub>
 - `LiveResult {`  <sub>src/admin/hooks/use-live.ts</sub>
-- `LiveStore extends ClientStore {`  <sub>experiments/contracts-spike/adapters/store-live.ts</sub>
-- `LiveStoreOptions {`  <sub>experiments/contracts-spike/adapters/store-live.ts</sub>
 - `ManifestHost {`  <sub>src/extensions/backend/index.ts</sub>
 - `NavContribution {`  <sub>experiments/contracts-spike/contracts/extension.ts</sub>
 - `Op = "eq" | "ne" | "in" | "nin" | "lt" | "lte" | "gt" | "gte" | "contains" | "isNull";`  <sub>experiments/contracts-spike/contracts/store.ts</sub>
@@ -158,6 +159,8 @@ Rules: Mantine only via `Base*` aliases from `@texo/ui` (add a missing alias in 
 - `Session {`  <sub>experiments/contracts-spike/contracts/auth.ts</sub>
 - `Store extends ClientStore {`  <sub>experiments/contracts-spike/contracts/store.ts</sub>
 - `TexoAppShellProps {`  <sub>packages/ui/src/texo-app-shell.tsx</sub>
+- `TexoBoardColumn<T extends { id: string }> {`  <sub>packages/ui/src/texo-board.tsx</sub>
+- `TexoBoardProps<T extends { id: string }> {`  <sub>packages/ui/src/texo-board.tsx</sub>
 - `TexoColorScheme = 'light' | 'dark';`  <sub>packages/ui/src/texo-theme-provider.tsx</sub>
 - `TexoCommandPaletteProps {`  <sub>packages/ui/src/texo-command-palette.tsx</sub>
 - `TexoComponentDefinition<Props extends Record<string, unknown> = Record<string, unknown>> {`  <sub>packages/ui/src/texo-component.tsx</sub>
@@ -206,8 +209,7 @@ Rules: Mantine only via `Base*` aliases from `@texo/ui` (add a missing alias in 
 - `EntitySpecSchema: z.ZodType<EntitySpec> = z .object({ name, title: z.string(), fields: z.array(FieldSpecSchema) })`  <sub>experiments/contracts-spike/contracts/entity.ts</sub>
 - `host = { manifest: (): Promise<Manifest>`  <sub>src/admin/client.ts</sub>
   - use: `host.manifest(); host.getSetting(key); host.putSetting(key, value); host.putSpec(spec)`
-- `isLiveStore = (store: ClientStore): store is LiveStore`  <sub>experiments/contracts-spike/adapters/store-live.ts</sub>
 - `isMac = typeof navigator !== 'undefined' && /mac|iphone|ipad/i.test(navigator.platform || navigator.userAgent)`  <sub>packages/ui/src/texo-hotkeys.ts</sub>
-- `isTempId = (id: string): boolean`  <sub>experiments/contracts-spike/adapters/store-live.ts</sub>
+- `isTempId = (id: string): boolean`  <sub>experiments/contracts-spike/adapters/store-collections.ts</sub>
 - `ManifestProvider = ManifestContext.Provider; export const useManifest = ()`  <sub>src/extensions/backend/index.ts</sub>
 - `theme = createTheme({ primaryColor: 'blue', defaultRadius: 'md', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif', headings: { fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif', }, })`  <sub>packages/ui/src/theme.ts</sub>
