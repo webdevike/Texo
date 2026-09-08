@@ -235,6 +235,12 @@ function ComponentPreview({
       );
     case 'BaseModal':
       return <BaseModal opened={false} onClose={() => undefined} />;
+    case 'BaseNumberInput':
+      return <BaseComponents.BaseNumberInput label="Amount" placeholder="0" />;
+    case 'BaseKbd':
+      return <BaseComponents.BaseKbd>K</BaseComponents.BaseKbd>;
+    case 'BaseComboboxPopover':
+      return <BaseComponents.BaseComboboxPopover data={['First', 'Second']} value="First" />;
     case 'BaseNavLink':
       return <BaseNavLink label="Navigation link" />;
     case 'BaseScrollArea':

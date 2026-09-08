@@ -121,9 +121,12 @@ export function useCommands(build: (ui: { openPalette: () => void; openHelp: () 
   const ctx = { navigate, pathname };
   const visible = commands.filter((c) => c.when?.(ctx) ?? true);
 
+  // The palette is the one binding that must reach through focused inputs (mod+k never
+  // collides with typing); the contract has no such flag, so the shell decides here.
   const hotkeys: HotkeyCommand[] = commands.map((c) => ({
     id: c.id,
     keys: c.keys,
+    inInputs: c.id === 'shell.palette',
     when: () => c.when?.(ctx) ?? true,
     run: () => void c.run(ctx),
   }));
