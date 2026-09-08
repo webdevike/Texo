@@ -89,7 +89,6 @@ export function EntityPage({ entity, store, resolveEntity }: {
     if (params.has('new')) setParams((p) => { p.delete('new'); return p; }, { replace: true });
   };
   // Slice E extends EntityForm with `store` + `resolveEntity`; passed through untyped until merge.
-  const formProps: Record<string, unknown> = { store, resolveEntity };
 
   return (
     <BaseStack gap="sm" style={{ height: 'calc(100dvh - 136px)', minHeight: 360 }}>
@@ -151,7 +150,8 @@ export function EntityPage({ entity, store, resolveEntity }: {
                 close();
                 list.refetch();
               }}
-              {...formProps}
+              store={store}
+              resolveEntity={resolveEntity ?? (() => undefined)}
             />
             {editing !== 'new' && (
               <BaseButton color="red" onClick={async () => { await store.remove(entity, editing.id); close(); list.refetch(); }} variant="subtle">

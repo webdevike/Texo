@@ -29,15 +29,16 @@ import {
   useLocation,
   useNavigate,
 } from 'react-router-dom';
-import { AdminContent, AdminSchema, AdminSystem } from '../admin/admin-pages';
 import { BackendNav, BackendSearch } from '../admin/backend-rail';
 import { host, type Manifest } from '../admin/client';
+import { projectComponents, registry } from '../extensions';
+import { ManifestProvider } from '../extensions/backend';
 import { AttioDashboardPage } from './attio-dashboard-page';
 import { CardsPage } from './cards-page';
+import { entityCommands, shellCommands, useCommands } from './commands';
 import { DashboardPage } from './dashboard-page';
 import { CustomComponentsPage } from './custom-components-page';
 import { ThemeControls } from './theme-controls';
-import { projectComponents } from '../extensions/registry';
 import { WorkspaceSwitcher } from '../admin/auth-gate';
 
 const {
@@ -56,6 +57,7 @@ const {
   BaseInputBase,
   BaseGroup,
   BaseMenu,
+  BaseModal,
   BaseNavLink,
   BaseNumberInput,
   BaseSelect,
@@ -233,6 +235,14 @@ function ComponentPreview({
           <BaseMenu.Dropdown />
         </BaseMenu>
       );
+    case 'BaseModal':
+      return <BaseModal opened={false} onClose={() => undefined} />;
+    case 'BaseNumberInput':
+      return <BaseComponents.BaseNumberInput label="Amount" placeholder="0" />;
+    case 'BaseKbd':
+      return <BaseComponents.BaseKbd>K</BaseComponents.BaseKbd>;
+    case 'BaseComboboxPopover':
+      return <BaseComponents.BaseComboboxPopover data={['First', 'Second']} value="First" />;
     case 'BaseNavLink':
       return <BaseNavLink label="Navigation link" />;
     case 'BaseScrollArea':
@@ -323,6 +333,7 @@ export function App() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [panelEnabled, setPanelEnabled] = useState(false);
+  const [activeRail, setActiveRail] = useState<string | null>('theme');
   const [propertyTab, setPropertyTab] = useState<string | null>('colors');
   const [pageSearch, setPageSearch] = useState('');
   const [backendSearch, setBackendSearch] = useState('');
@@ -344,6 +355,22 @@ export function App() {
     undo,
     updateConfig,
   } = useTexoTheme();
+  const toggleColorScheme = useCallback(
+    () =>
+      updateConfig((current) => ({
+        ...current,
+        colorScheme: current.colorScheme === 'light' ? 'dark' : 'light',
+      })),
+    [updateConfig],
+  );
+  const { overlays } = useCommands((ui) => [
+    ...shellCommands(
+      { activeRail, setRail: setActiveRail, railIds: ['theme', 'pages', 'backend'], toggleColorScheme, undo, redo, canUndo, canRedo },
+      ui,
+    ),
+    ...registry.commands,
+    ...entityCommands(manifest),
+  ]);
 
   const selectedItem =
     navigationItems.find((item) => item.path === pathname) ??
@@ -394,12 +421,7 @@ export function App() {
       <BaseActionIcon
         aria-label="Toggle color scheme"
         variant="subtle"
-        onClick={() =>
-          updateConfig((current) => ({
-            ...current,
-            colorScheme: current.colorScheme === 'light' ? 'dark' : 'light',
-          }))
-        }
+        onClick={toggleColorScheme}
       >
         {config.colorScheme === 'light' ? (
           <IconSun size={16} />
@@ -603,7 +625,7 @@ export function App() {
       subheader: pagesSearch,
     },
     {
-      body: <BackendNav manifest={manifest} pathname={pathname} query={backendSearch} />,
+      body: <BackendNav manifest={manifest} nav={registry.nav} pathname={pathname} query={backendSearch} />,
       header: (
         <BaseText fw={600} px="sm" size="sm">
           Backend
@@ -619,35 +641,38 @@ export function App() {
   return (
     <TexoAppShell
       actions={actions}
-      defaultRail="theme"
+      activeRail={activeRail}
+      onRailChange={setActiveRail}
       previewTabs={previewTabs}
       rail={rail}
     >
-      <Routes>
-        <Route path="/" element={<Navigate to="/theme" replace />} />
-        <Route path="/theme" element={<ThemePage />} />
-        <Route path="/cards" element={<CardsPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/dashboard/attio" element={<AttioDashboardPage />} />
-        <Route path="/custom" element={<CustomComponentsPage />} />
-        <Route path="/custom/:componentId" element={<CustomComponentsPage />} />
-        {componentNavigationItems
-          .filter((item) => item.path !== '/cards')
-          .map((item) => (
-            <Route
-              key={item.path}
-              path={item.path}
-              element={
-                <ComponentPage component={item.component} name={item.name} />
-              }
-            />
+      <ManifestProvider value={{ manifest, reload: reloadManifest }}>
+        <Routes>
+          <Route path="/" element={<Navigate to="/theme" replace />} />
+          <Route path="/theme" element={<ThemePage />} />
+          <Route path="/cards" element={<CardsPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/dashboard/attio" element={<AttioDashboardPage />} />
+          <Route path="/custom" element={<CustomComponentsPage />} />
+          <Route path="/custom/:componentId" element={<CustomComponentsPage />} />
+          {componentNavigationItems
+            .filter((item) => item.path !== '/cards')
+            .map((item) => (
+              <Route
+                key={item.path}
+                path={item.path}
+                element={
+                  <ComponentPage component={item.component} name={item.name} />
+                }
+              />
+            ))}
+          {registry.routes.map((route) => (
+            <Route element={createElement(route.element)} key={route.path} path={route.path} />
           ))}
-        <Route path="/admin" element={<Navigate to="/admin/system" replace />} />
-        <Route path="/admin/system" element={manifest ? <AdminSystem manifest={manifest} /> : null} />
-        <Route path="/admin/content/:name" element={manifest ? <AdminContent manifest={manifest} /> : null} />
-        <Route path="/admin/schema/:name" element={manifest ? <AdminSchema manifest={manifest} onChanged={reloadManifest} /> : null} />
-        <Route path="*" element={<Navigate to="/theme" replace />} />
-      </Routes>
+          <Route path="*" element={<Navigate to="/theme" replace />} />
+        </Routes>
+      </ManifestProvider>
+      {overlays}
 
       <TexoPanel
         gutter={0}

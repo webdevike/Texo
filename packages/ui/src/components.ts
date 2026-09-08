@@ -39,6 +39,10 @@ import {
     type MenuProps,
     MultiSelect,
     type MultiSelectProps,
+    Modal,
+    type ModalProps,
+    Kbd,
+    type KbdProps,
     InputBase,
     type InputBaseProps,
     NavLink,
@@ -97,6 +101,8 @@ export const BaseGroup = Group;
 export const BaseInputBase = InputBase;
 export const BaseMenu = Menu;
 export const BaseMultiSelect = MultiSelect;
+export const BaseModal = Modal;
+export const BaseKbd = Kbd;
 export const BaseNavLink = NavLink;
 export const BaseNumberInput = NumberInput;
 export const BaseSelect = Select;
@@ -134,6 +140,8 @@ export type BaseCenterProps = CenterProps;
 export type BaseGroupProps = GroupProps;
 export type BaseMenuProps = MenuProps;
 export type BaseMultiSelectProps = MultiSelectProps;
+export type BaseModalProps = ModalProps;
+export type BaseKbdProps = KbdProps;
 export type BaseNavLinkProps = NavLinkProps;
 export type BaseSelectProps = SelectProps;
 export type BaseScrollerProps = ScrollerProps;
@@ -157,14 +165,8 @@ import {
     type CloseButtonProps,
     Divider,
     type DividerProps,
-    Kbd,
-    type KbdProps,
     Loader,
     type LoaderProps,
-    Modal,
-    type ModalProps,
-    MultiSelect,
-    type MultiSelectProps,
     Pill,
     type PillProps,
     Popover,
@@ -173,18 +175,12 @@ import {
 
 export const BaseCloseButton = CloseButton;
 export const BaseDivider = Divider;
-export const BaseKbd = Kbd;
 export const BaseLoader = Loader;
-export const BaseModal = Modal;
-export const BaseMultiSelect = MultiSelect;
 export const BasePill = Pill;
 export const BasePopover = Popover;
 
 export type BaseCloseButtonProps = CloseButtonProps;
 export type BaseDividerProps = DividerProps;
-export type BaseKbdProps = KbdProps;
 export type BaseLoaderProps = LoaderProps;
-export type BaseModalProps = ModalProps;
-export type BaseMultiSelectProps = MultiSelectProps;
 export type BasePillProps = PillProps;
 export type BasePopoverProps = PopoverProps;
