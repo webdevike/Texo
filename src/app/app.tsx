@@ -33,6 +33,7 @@ import { BackendNav, BackendSearch } from '../admin/backend-rail';
 import { host, type Manifest } from '../admin/client';
 import { projectComponents, registry } from '../extensions';
 import { ManifestProvider } from '../extensions/backend';
+import { LiveDemo } from '../admin/live-demo';
 import { AttioDashboardPage } from './attio-dashboard-page';
 import { CardsPage } from './cards-page';
 import { entityCommands, shellCommands, useCommands } from './commands';
@@ -669,6 +670,7 @@ export function App() {
           {registry.routes.map((route) => (
             <Route element={createElement(route.element)} key={route.path} path={route.path} />
           ))}
+          <Route path="/admin/live" element={<LiveDemo />} />
           <Route path="*" element={<Navigate to="/theme" replace />} />
         </Routes>
       </ManifestProvider>
