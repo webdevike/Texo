@@ -50,6 +50,10 @@ const OPS_BY_KIND: Record<TexoFilterKind, TexoFilterOp[]> = {
   relation: ['eq', 'isNull'],
 };
 
+// Dropdowns inside the filter popover stay in its DOM subtree; a portal would make every option
+// click count as a click outside the popover and close it.
+const INNER_COMBOBOX = { withinPortal: false } as const;
+
 const OP_LABEL: Record<TexoFilterOp, string> = {
   eq: 'is',
   ne: 'is not',
@@ -110,6 +114,7 @@ function FilterEditor({ fields, onAdd }: { fields: readonly TexoFilterField[]; o
     <BaseStack gap="xs" miw={260}>
       <BaseSelect
         allowDeselect={false}
+        comboboxProps={INNER_COMBOBOX}
         data={fields.map((f) => ({ value: f.name, label: typeof f.label === 'string' ? f.label : f.name }))}
         label="Field"
         onChange={pickField}
@@ -119,6 +124,7 @@ function FilterEditor({ fields, onAdd }: { fields: readonly TexoFilterField[]; o
       {field && (
         <BaseSelect
           allowDeselect={false}
+          comboboxProps={INNER_COMBOBOX}
           data={ops.map((o) => ({ value: o, label: OP_LABEL[o] }))}
           label="Condition"
           onChange={(v) => v && setOp(v as TexoFilterOp)}
@@ -128,6 +134,7 @@ function FilterEditor({ fields, onAdd }: { fields: readonly TexoFilterField[]; o
       )}
       {field && effectiveOp !== 'isNull' && field.kind === 'enum' && (
         <BaseMultiSelect
+          comboboxProps={INNER_COMBOBOX}
           data={field.options ?? []}
           label="Values"
           onChange={setValue}

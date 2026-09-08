@@ -158,6 +158,10 @@ export function TexoDataTable<T extends { id: string }>({
     count: rows.length,
     getScrollElement: () => viewportRef.current,
     estimateSize: () => rowHeight,
+    // The header row is the first `rowHeight` px of scroll content; when sticky it also covers
+    // that much of the viewport, so scrollToIndex must land rows below it.
+    scrollMargin: rowHeight,
+    scrollPaddingStart: config.table.stickyHeader ? rowHeight : 0,
     overscan,
     getItemKey: (index) => rows[index].id,
     // Scroll-only updates write row transforms straight to the DOM; React re-renders only when
