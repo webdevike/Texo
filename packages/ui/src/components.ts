@@ -142,3 +142,41 @@ export type BaseTooltipProps = TooltipProps;
 export type BaseTextareaProps = TextareaProps;
 export type BaseTreeNodeData = TreeNodeData;
 export type BaseTreeProps = TreeProps;
+
+// b-query slice: list surface primitives.
+import {
+    CloseButton,
+    type CloseButtonProps,
+    Divider,
+    type DividerProps,
+    Kbd,
+    type KbdProps,
+    Loader,
+    type LoaderProps,
+    Modal,
+    type ModalProps,
+    MultiSelect,
+    type MultiSelectProps,
+    Pill,
+    type PillProps,
+    Popover,
+    type PopoverProps,
+} from './mantine';
+
+export const BaseCloseButton = CloseButton;
+export const BaseDivider = Divider;
+export const BaseKbd = Kbd;
+export const BaseLoader = Loader;
+export const BaseModal = Modal;
+export const BaseMultiSelect = MultiSelect;
+export const BasePill = Pill;
+export const BasePopover = Popover;
+
+export type BaseCloseButtonProps = CloseButtonProps;
+export type BaseDividerProps = DividerProps;
+export type BaseKbdProps = KbdProps;
+export type BaseLoaderProps = LoaderProps;
+export type BaseModalProps = ModalProps;
+export type BaseMultiSelectProps = MultiSelectProps;
+export type BasePillProps = PillProps;
+export type BasePopoverProps = PopoverProps;

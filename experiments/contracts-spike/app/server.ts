@@ -47,7 +47,7 @@ async function texo(req: Request, path: string): Promise<Response> {
 }
 
 const server = Bun.serve({
-  port: 4321,
+  port: 4332,
   async fetch(req) {
     const url = new URL(req.url);
     if (url.pathname.startsWith("/api/_texo/")) return texo(req, url.pathname.slice("/api/_texo/".length));
