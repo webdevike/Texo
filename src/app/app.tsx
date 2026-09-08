@@ -276,12 +276,21 @@ function ComponentPreview({
       );
     case 'BaseTree':
       return <BaseTree data={treeData} />;
-    default:
+    default: {
+      // Input-like aliases render a void <input>; children would crash React.
+      const inputLike = /Input|Select|Textarea|Checkbox|Switch|Slider|Radio|Picker|Rating|Combobox/.test(name);
+      if (inputLike) {
+        return createElement(component as ComponentType<{ label?: string; placeholder?: string }>, {
+          label: formatComponentName(name),
+          placeholder: formatComponentName(name),
+        });
+      }
       return createElement(
         component as ComponentType<PropsWithChildren>,
         null,
         formatComponentName(name),
       );
+    }
   }
 }
 

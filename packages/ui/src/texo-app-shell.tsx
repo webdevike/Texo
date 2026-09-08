@@ -25,21 +25,31 @@ export interface TexoRailItem {
 export interface TexoAppShellProps {
   actions: ReactNode;
   children: ReactNode;
-  /** Rail item open on first render; `null` starts with the panel collapsed. */
+  /** Rail item open on first render; `null` starts with the panel collapsed. Ignored when `activeRail` is given. */
   defaultRail?: string | null;
+  /** Controlled open rail. Pair with `onRailChange` so keybindings can drive the panel. */
+  activeRail?: string | null;
+  onRailChange?: (id: string | null) => void;
   previewTabs: ReactNode;
   rail: TexoRailItem[];
 }
 
 export function TexoAppShell({
   actions,
+  activeRail: controlledRail,
   children,
   defaultRail = null,
+  onRailChange,
   previewTabs,
   rail,
 }: TexoAppShellProps) {
-  const [activeRail, setActiveRail] = useState<string | null>(defaultRail);
+  const [uncontrolledRail, setUncontrolledRail] = useState<string | null>(defaultRail);
   const [panelWidth, setPanelWidth] = useState(320);
+  const activeRail = controlledRail === undefined ? uncontrolledRail : controlledRail;
+  const setActiveRail = (id: string | null) => {
+    if (controlledRail === undefined) setUncontrolledRail(id);
+    onRailChange?.(id);
+  };
 
   const active = rail.find((item) => item.id === activeRail) ?? null;
 

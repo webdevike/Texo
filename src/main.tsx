@@ -1,5 +1,5 @@
 import { StrictMode } from 'react';
-import { TexoThemeProvider } from '@texo/ui';
+import { TEXO_THEME_PRESETS, TexoThemeProvider, type TexoThemeConfig } from '@texo/ui';
 import { BrowserRouter } from 'react-router-dom';
 import * as ReactDOM from 'react-dom/client';
 import App from './app/app';
@@ -8,9 +8,24 @@ const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement,
 );
 
+const THEME_KEY = 'texo.theme';
+const saved = (() => {
+  try {
+    const raw = localStorage.getItem(THEME_KEY);
+    if (!raw) return undefined;
+    const t = JSON.parse(raw) as { config: TexoThemeConfig; preset: string };
+    return { config: { ...TEXO_THEME_PRESETS[0].config, ...t.config }, preset: t.preset };
+  } catch {
+    return undefined;
+  }
+})();
+
 root.render(
   <StrictMode>
-    <TexoThemeProvider>
+    <TexoThemeProvider
+      initial={saved}
+      onChange={(config, preset) => localStorage.setItem(THEME_KEY, JSON.stringify({ config, preset }))}
+    >
       <BrowserRouter future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
         <App />
       </BrowserRouter>

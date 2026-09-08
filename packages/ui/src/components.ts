@@ -5,6 +5,12 @@ import {
     type ActionIconProps,
     AppShell,
     type AppShellProps,
+    Badge,
+    type BadgeProps,
+    Code,
+    type CodeProps,
+    Collapse,
+    type CollapseProps,
     Box,
     type BoxProps,
     Button,
@@ -25,14 +31,24 @@ import {
     type ColorInputProps,
     Drawer,
     type DrawerProps,
+    Fieldset,
+    type FieldsetProps,
     Group,
     type GroupProps,
     Menu,
     type MenuProps,
+    MultiSelect,
+    type MultiSelectProps,
+    Modal,
+    type ModalProps,
+    Kbd,
+    type KbdProps,
     InputBase,
     type InputBaseProps,
     NavLink,
     type NavLinkProps,
+    NumberInput,
+    type NumberInputProps,
     Select,
     type SelectProps,
     Scroller,
@@ -67,6 +83,9 @@ import {
 export const BaseAccordion = Accordion;
 export const BaseActionIcon = ActionIcon;
 export const BaseAppShell = AppShell;
+export const BaseBadge = Badge;
+export const BaseCode = Code;
+export const BaseCollapse = Collapse;
 export const BaseBox = Box;
 export const BaseCodeHighlight = CodeHighlight;
 export const BaseCombobox = Combobox;
@@ -76,11 +95,16 @@ export const BaseButton = Button;
 export const BaseCheckbox = Checkbox;
 export const BaseCard = Card;
 export const BaseDrawer = Drawer;
+export const BaseFieldset = Fieldset;
 export const BaseCenter = Center;
 export const BaseGroup = Group;
 export const BaseInputBase = InputBase;
 export const BaseMenu = Menu;
+export const BaseMultiSelect = MultiSelect;
+export const BaseModal = Modal;
+export const BaseKbd = Kbd;
 export const BaseNavLink = NavLink;
+export const BaseNumberInput = NumberInput;
 export const BaseSelect = Select;
 export const BaseScroller = Scroller;
 export const BaseStack = Stack;
@@ -98,11 +122,16 @@ export const BaseTree = Tree;
 export type BaseActionIconProps = ActionIconProps;
 export type BaseAccordionProps = AccordionProps;
 export type BaseAppShellProps = AppShellProps;
+export type BaseBadgeProps = BadgeProps;
+export type BaseCodeProps = CodeProps;
+export type BaseCollapseProps = CollapseProps;
+export type BaseNumberInputProps = NumberInputProps;
 export type BaseCodeHighlightProps = CodeHighlightProps;
 export type BaseColorInputProps = ColorInputProps;
 export type BaseBoxProps = BoxProps;
 export type BaseButtonProps = ButtonProps;
 export type BaseDrawerProps = DrawerProps;
+export type BaseFieldsetProps = FieldsetProps;
 export type BaseComboboxProps = ComboboxProps;
 export type BaseComboboxPopoverProps = ComboboxPopoverProps;
 export type BaseCheckboxProps = CheckboxProps;
@@ -110,6 +139,9 @@ export type BaseCardProps = CardProps;
 export type BaseCenterProps = CenterProps;
 export type BaseGroupProps = GroupProps;
 export type BaseMenuProps = MenuProps;
+export type BaseMultiSelectProps = MultiSelectProps;
+export type BaseModalProps = ModalProps;
+export type BaseKbdProps = KbdProps;
 export type BaseNavLinkProps = NavLinkProps;
 export type BaseSelectProps = SelectProps;
 export type BaseScrollerProps = ScrollerProps;
@@ -126,3 +158,33 @@ export type BaseTooltipProps = TooltipProps;
 export type BaseTextareaProps = TextareaProps;
 export type BaseTreeNodeData = TreeNodeData;
 export type BaseTreeProps = TreeProps;
+
+// b-query slice: list surface primitives.
+import {
+    CloseButton,
+    type CloseButtonProps,
+    Divider,
+    type DividerProps,
+    Loader,
+    type LoaderProps,
+    Notification,
+    type NotificationProps,
+    Pill,
+    type PillProps,
+    Popover,
+    type PopoverProps,
+} from './mantine';
+
+export const BaseCloseButton = CloseButton;
+export const BaseDivider = Divider;
+export const BaseLoader = Loader;
+export const BaseNotification = Notification;
+export const BasePill = Pill;
+export const BasePopover = Popover;
+
+export type BaseCloseButtonProps = CloseButtonProps;
+export type BaseDividerProps = DividerProps;
+export type BaseLoaderProps = LoaderProps;
+export type BaseNotificationProps = NotificationProps;
+export type BasePillProps = PillProps;
+export type BasePopoverProps = PopoverProps;

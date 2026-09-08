@@ -1,7 +1,9 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -419,10 +421,29 @@ interface TexoThemeContextValue {
 
 const TexoThemeContext = createContext<TexoThemeContextValue | null>(null);
 
-export function TexoThemeProvider({ children }: { children: ReactNode }) {
+export interface TexoThemeProviderProps {
+  children: ReactNode;
+  /** Persisted state to start from. Absent = first preset. */
+  initial?: { config: TexoThemeConfig; preset: string };
+  /** Fires on every committed change (not the seed) so a host can persist it. */
+  onChange?: (config: TexoThemeConfig, preset: string) => void;
+}
+
+export function TexoThemeProvider({ children, initial, onChange }: TexoThemeProviderProps) {
   const [history, setHistory] = useState<ThemeHistory>({
-    future: [], past: [], present: TEXO_THEME_PRESETS[0].config, preset: TEXO_THEME_PRESETS[0].value,
+    future: [],
+    past: [],
+    present: initial?.config ?? TEXO_THEME_PRESETS[0].config,
+    preset: initial?.preset ?? TEXO_THEME_PRESETS[0].value,
   });
+  const seeded = useRef(true);
+  useEffect(() => {
+    if (seeded.current) {
+      seeded.current = false;
+      return;
+    }
+    onChange?.(history.present, history.preset);
+  }, [history.present, history.preset]);
 
   const updateConfig = (update: (config: TexoThemeConfig) => TexoThemeConfig) => {
     setHistory((current) => ({
