@@ -1,3 +1,4 @@
 app/data.sqlite
 node_modules
 app/data-*.sqlite
+app/data.pglite
