@@ -55,26 +55,39 @@ function collect(store: ClientStore) {
   };
 }
 
-/** The SSE reader connects asynchronously; a probe write tells us the client is really listening. */
-async function connected(store: ClientStore) {
-  let onEvent = (_e: ChangeEvent) => {};
-  const stop = store.subscribe(null, (e) => onEvent(e));
-  for (;;) {
-    const first = Promise.withResolvers<true>();
-    onEvent = () => first.resolve(true);
+/**
+ * The SSE reader connects asynchronously. Probe writes until every client has seen one, then a
+ * final barrier probe every client must see removed, so no late event lands after a caller's baseline.
+ */
+async function connected(...stores: ClientStore[]) {
+  const handlers = stores.map(() => (_e: ChangeEvent) => {});
+  const stops = stores.map((s, i) => s.subscribe(null, (e) => handlers[i]!(e)));
+  const probe = async (arm: (i: number, r: { id: string }) => Promise<unknown>) => {
     const r = await root.create(task, { title: "probe", priority: 0, status: "todo" });
-    const won = await Promise.race([first.promise, new Promise<false>((res) => setTimeout(() => res(false), 20))]);
-    // Wait for the probe's removal too, so no late event lands after the caller takes its baseline.
-    const removed = Promise.withResolvers<void>();
-    onEvent = (e) => {
-      if (e.kind === "removed" && e.id === r.id) removed.resolve();
-    };
+    const armed = stores.map((_, i) => arm(i, r));
     await root.remove(task, r.id);
-    if (!won) continue;
-    await removed.promise;
-    break;
+    return armed;
+  };
+  const alive = new Set<number>();
+  while (alive.size < stores.length) {
+    const armed = await probe((i) => {
+      const first = Promise.withResolvers<boolean>();
+      handlers[i] = () => first.resolve(true);
+      setTimeout(() => first.resolve(false), 20);
+      return first.promise;
+    });
+    (await Promise.all(armed)).forEach((won, i) => won && alive.add(i));
   }
-  stop();
+  await Promise.all(
+    await probe((i, r) => {
+      const removed = Promise.withResolvers<void>();
+      handlers[i] = (e) => {
+        if (e.kind === "removed" && e.id === r.id) removed.resolve();
+      };
+      return removed.promise;
+    }),
+  );
+  for (const stop of stops) stop();
 }
 
 describe("two http clients over one host", () => {
@@ -83,8 +96,7 @@ describe("two http clients over one host", () => {
     const b = createHttpStore(base, { origin: "client-b" });
     const seenByA = collect(a);
     const seenByB = collect(b);
-    await connected(b);
-    await connected(a);
+    await connected(a, b);
     const baseline = seenByB.events.length;
 
     const three = seenByB.count(baseline + 3);
@@ -131,8 +143,7 @@ describe("two http clients over one host", () => {
     const stayer = createHttpStore(base, { origin: "stayer" });
     const gone = collect(leaver);
     const kept = collect(stayer);
-    await connected(leaver);
-    await connected(stayer);
+    await connected(leaver, stayer);
     gone.stop(); // aborts the fetch: the server's ReadableStream cancels
 
     const baseline = kept.events.length;
