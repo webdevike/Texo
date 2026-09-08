@@ -10,4 +10,6 @@ export * from './texo-theme-picker';
 export * from './texo-table';
 export * from './texo-nav';
 export * from './texo-field-list';
+export * from './texo-hotkeys';
+export * from './texo-command-palette';
 export { theme } from './theme';

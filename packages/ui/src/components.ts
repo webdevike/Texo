@@ -35,6 +35,10 @@ import {
     type GroupProps,
     Menu,
     type MenuProps,
+    Modal,
+    type ModalProps,
+    Kbd,
+    type KbdProps,
     InputBase,
     type InputBaseProps,
     NavLink,
@@ -91,6 +95,8 @@ export const BaseCenter = Center;
 export const BaseGroup = Group;
 export const BaseInputBase = InputBase;
 export const BaseMenu = Menu;
+export const BaseModal = Modal;
+export const BaseKbd = Kbd;
 export const BaseNavLink = NavLink;
 export const BaseNumberInput = NumberInput;
 export const BaseSelect = Select;
@@ -126,6 +132,8 @@ export type BaseCardProps = CardProps;
 export type BaseCenterProps = CenterProps;
 export type BaseGroupProps = GroupProps;
 export type BaseMenuProps = MenuProps;
+export type BaseModalProps = ModalProps;
+export type BaseKbdProps = KbdProps;
 export type BaseNavLinkProps = NavLinkProps;
 export type BaseSelectProps = SelectProps;
 export type BaseScrollerProps = ScrollerProps;
