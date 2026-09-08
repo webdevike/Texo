@@ -117,8 +117,16 @@ function IssuesList({ entity, entities, fixedWhere }: { entity: Entity; entities
     [entity],
   );
 
-  // The live cache re-applies edits to rows the list already holds (list rows are refetched on change).
-  useEffect(() => liveStore.subscribe(entity, () => list.refetch()), [entity, list.refetch]);
+  // Change events (own writes and SSE) refetch the visible page, debounced so a merge of many rows
+  // does not refetch once per row.
+  useEffect(() => {
+    let timer: number | undefined;
+    const unsub = liveStore.subscribe(entity, () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => list.refetch(), 400);
+    });
+    return () => { window.clearTimeout(timer); unsub(); };
+  }, [entity, list.refetch]);
 
   const sort = useMemo(() => {
     const o = list.query.orderBy;

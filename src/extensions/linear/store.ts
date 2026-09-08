@@ -22,3 +22,6 @@ export function useEntities() {
     return { all, resolve: by, issue: by('issue'), project: by('project'), member: by('member'), label: by('label'), team: by('team') };
   }, [manifest]);
 }
+
+// Dev aid for browser-driven verification (rejected-patch rollback proof).
+Object.assign(window, { __texoLive: liveStore });
