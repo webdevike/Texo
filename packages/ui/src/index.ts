@@ -15,3 +15,4 @@ export * from './texo-command-palette';
 export { theme } from './theme';
 export * from './texo-data-table';
 export * from './texo-filter-bar';
+export * from './texo-board';
