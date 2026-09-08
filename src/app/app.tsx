@@ -32,6 +32,7 @@ import {
 import { AdminContent, AdminSchema, AdminSystem } from '../admin/admin-pages';
 import { BackendNav, BackendSearch } from '../admin/backend-rail';
 import { host, type Manifest } from '../admin/client';
+import { LiveDemo } from '../admin/live-demo';
 import { AttioDashboardPage } from './attio-dashboard-page';
 import { CardsPage } from './cards-page';
 import { DashboardPage } from './dashboard-page';
@@ -641,6 +642,7 @@ export function App() {
         <Route path="/admin/system" element={manifest ? <AdminSystem manifest={manifest} /> : null} />
         <Route path="/admin/content/:name" element={manifest ? <AdminContent manifest={manifest} /> : null} />
         <Route path="/admin/schema/:name" element={manifest ? <AdminSchema manifest={manifest} onChanged={reloadManifest} /> : null} />
+        <Route path="/admin/live" element={<LiveDemo />} />
         <Route path="*" element={<Navigate to="/theme" replace />} />
       </Routes>
 
