@@ -63,16 +63,14 @@ type Cond = { op: string; value?: unknown };
 
 /**
  * TexoFilterBar / fixed `Where` conditions as TanStack DB predicates over the row ref. `labels` is
- * a many-relation (an array on the row), which no operator covers: it comes back as `arrays` and
- * is applied with a functional where.
+ * a many-relation (an array on the row) no operator covers; `filteredOf` applies it functionally.
  */
-function predicatesOf(ref: Record<string, Expr>, where: Where) {
+function predicatesOf(ref: Record<string, Expr>, where: Where): Expr[] {
   const exprs: Expr[] = [];
-  const arrays: { field: string; value: string }[] = [];
   for (const [field, raw] of Object.entries(where)) {
+    if (field === 'labels') continue;
     const cond: Cond = raw && typeof raw === 'object' && 'op' in raw ? (raw as Cond) : { op: 'eq', value: raw };
     const col = ref[field];
-    if (field === 'labels' && (cond.op === 'eq' || cond.op === 'contains')) { arrays.push({ field, value: String(cond.value) }); continue; }
     switch (cond.op) {
       case 'eq': exprs.push(eq(col, cond.value)); break;
       case 'ne': exprs.push(not(eq(col, cond.value))); break;
@@ -86,23 +84,28 @@ function predicatesOf(ref: Record<string, Expr>, where: Where) {
       case 'isNull': exprs.push(or(isNull(col), isUndefined(col))); break;
     }
   }
-  return { exprs, arrays };
+  return exprs;
 }
 
 type IssueQuery = QueryBuilder<ContextFromSource<{ i: Collection<IssueRow, string> }>>;
 
 /** Where chips, fixed conditions and the search box applied to an issue query. */
 function filteredOf(b: IssueQuery, where: Where, search: string): IssueQuery {
-  const exprs: Expr[] = [];
-  let arrays: { field: string; value: string }[] = [];
-  let out = b.where(({ i }) => {
-    const p = predicatesOf(i as unknown as Record<string, Expr>, where);
-    arrays = p.arrays;
-    exprs.push(...p.exprs);
-    if (search) exprs.push(ilike((i as unknown as IssueRow).title, `%${search}%`));
-    return exprs.length > 1 ? and(exprs[0], exprs[1], ...exprs.slice(2)) : exprs[0];
-  });
-  for (const a of arrays) out = out.fn.where((row) => ((row as { i: IssueRow }).i[a.field] as string[] | undefined)?.includes(a.value) ?? false);
+  const fields = Object.keys(where);
+  const arrays = fields.filter((f) => f === 'labels');
+  let out = b;
+  if (search || fields.length > arrays.length) {
+    out = out.where(({ i }) => {
+      const exprs = predicatesOf(i as unknown as Record<string, Expr>, where);
+      if (search) exprs.push(ilike((i as unknown as IssueRow).title, `%${search}%`));
+      return exprs.length > 1 ? and(exprs[0], exprs[1], ...exprs.slice(2)) : exprs[0];
+    });
+  }
+  for (const field of arrays) {
+    const raw = where[field] as Cond | string;
+    const value = String(typeof raw === 'object' && raw ? raw.value : raw);
+    out = out.fn.where((row) => ((row as { i: IssueRow }).i[field] as string[] | undefined)?.includes(value) ?? false);
+  }
   return out;
 }
 
