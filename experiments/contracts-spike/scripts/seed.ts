@@ -16,7 +16,6 @@ export function issueAt(i: number): Input {
     title: `Issue ${i}: ${WORDS[i % WORDS.length]} ${WORDS[(i * 7) % WORDS.length]}`,
     status,
     priority: i % 5,
-    done: status === "done",
     notes: i % 3 === 0 ? `Reported by user ${i % 97}` : undefined,
   };
 }

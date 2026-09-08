@@ -73,13 +73,13 @@ describe("scale: sqlite with 10k issue rows", () => {
     for (const r of page.rows) expect(String(r.title).toLowerCase()).toContain("issue 9");
     expect(median).toBeLessThan(100);
 
-    const { page: combined, median: m2 } = await timed('search "issue 9" + where{done=true} sorted', {
+    const { page: combined, median: m2 } = await timed('search "issue 9" + where{status=done} sorted', {
       search: "issue 9",
-      where: { done: true },
+      where: { status: "done" },
       orderBy: { field: "title", direction: "asc" },
       limit: 50,
     });
-    expect(combined.total).toBe(Array.from({ length: COUNT }, (_, i) => issueAt(i)).filter((r) => String(r.title).toLowerCase().includes("issue 9") && r.done === true).length);
+    expect(combined.total).toBe(Array.from({ length: COUNT }, (_, i) => issueAt(i)).filter((r) => String(r.title).toLowerCase().includes("issue 9") && r.status === "done").length);
     expect(m2).toBeLessThan(100);
   });
 
