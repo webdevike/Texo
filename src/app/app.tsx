@@ -57,6 +57,7 @@ const {
   BaseGroup,
   BaseMenu,
   BaseNavLink,
+  BaseNumberInput,
   BaseSelect,
   BaseScrollArea,
   BaseScroller,
@@ -270,6 +271,8 @@ function ComponentPreview({
       );
     case 'BaseText':
       return <BaseText>Text</BaseText>;
+    case 'BaseNumberInput':
+      return <BaseNumberInput label="Amount" placeholder="0" />;
     case 'BaseTextarea':
       return <BaseTextarea label="Notes" />;
     case 'BaseTextInput':

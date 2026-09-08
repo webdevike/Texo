@@ -9,7 +9,6 @@ import {
   BaseCard,
   BaseCenter,
   BaseGroup,
-  BasePasswordInput,
   BaseProvider,
   BaseSelect,
   BaseStack,
@@ -108,8 +107,9 @@ function SignIn({ onSession }: { onSession: (s: Session) => void }) {
                 autoComplete="email"
                 data-testid="auth-email"
               />
-              <BasePasswordInput
+              <BaseTextInput
                 label="Password"
+                type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.currentTarget.value)}
