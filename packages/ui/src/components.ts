@@ -41,6 +41,8 @@ import {
     type NavLinkProps,
     NumberInput,
     type NumberInputProps,
+    PasswordInput,
+    type PasswordInputProps,
     Select,
     type SelectProps,
     Scroller,
@@ -93,6 +95,7 @@ export const BaseInputBase = InputBase;
 export const BaseMenu = Menu;
 export const BaseNavLink = NavLink;
 export const BaseNumberInput = NumberInput;
+export const BasePasswordInput = PasswordInput;
 export const BaseSelect = Select;
 export const BaseScroller = Scroller;
 export const BaseStack = Stack;
@@ -128,6 +131,7 @@ export type BaseGroupProps = GroupProps;
 export type BaseMenuProps = MenuProps;
 export type BaseNavLinkProps = NavLinkProps;
 export type BaseSelectProps = SelectProps;
+export type BasePasswordInputProps = PasswordInputProps;
 export type BaseScrollerProps = ScrollerProps;
 export type BaseInputBaseProps = InputBaseProps;
 export type BaseStackProps = StackProps;

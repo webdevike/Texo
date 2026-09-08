@@ -38,6 +38,7 @@ import { DashboardPage } from './dashboard-page';
 import { CustomComponentsPage } from './custom-components-page';
 import { ThemeControls } from './theme-controls';
 import { projectComponents } from '../extensions/registry';
+import { WorkspaceSwitcher } from '../admin/auth-gate';
 
 const {
   BaseAccordion,
@@ -386,6 +387,7 @@ export function App() {
 
   const actions = (
     <BaseGroup gap="xs">
+      <WorkspaceSwitcher />
       <BaseActionIcon
         aria-label="Toggle color scheme"
         variant="subtle"
