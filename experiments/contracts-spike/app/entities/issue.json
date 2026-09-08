@@ -2,22 +2,87 @@
   "name": "issue",
   "title": "title",
   "fields": [
-    { "name": "title", "kind": "string", "min": 1 },
-    { "name": "status", "kind": "enum", "options": ["backlog", "todo", "in_progress", "done"], "default": "backlog" },
-    { "name": "priority", "kind": "number", "integer": true, "min": 0, "max": 4, "default": 0 },
-    { "name": "done", "kind": "boolean", "default": false },
-    { "name": "notes", "kind": "string", "optional": true, "long": true },
-    { "name": "project", "kind": "relation", "to": "project", "optional": true },
-    { "name": "assignee", "kind": "relation", "to": "member", "optional": true },
-    { "name": "due", "kind": "date", "optional": true },
+    {
+      "name": "title",
+      "kind": "string",
+      "min": 1
+    },
+    {
+      "name": "description",
+      "kind": "string",
+      "optional": true,
+      "long": true
+    },
+    {
+      "name": "team",
+      "kind": "relation",
+      "to": "team",
+      "optional": true
+    },
+    {
+      "name": "project",
+      "kind": "relation",
+      "to": "project",
+      "optional": true
+    },
+    {
+      "name": "assignee",
+      "kind": "relation",
+      "to": "member",
+      "optional": true
+    },
+    {
+      "name": "status",
+      "kind": "enum",
+      "options": [
+        "backlog",
+        "todo",
+        "in_progress",
+        "done",
+        "canceled"
+      ],
+      "default": "backlog"
+    },
+    {
+      "name": "priority",
+      "kind": "number",
+      "integer": true,
+      "min": 0,
+      "max": 4,
+      "default": 0
+    },
+    {
+      "name": "estimate",
+      "kind": "number",
+      "optional": true
+    },
+    {
+      "name": "due",
+      "kind": "date",
+      "optional": true
+    },
+    {
+      "name": "labels",
+      "kind": "relation",
+      "to": "label",
+      "many": true,
+      "optional": true
+    },
     {
       "name": "checklist",
       "kind": "group",
       "repeatable": true,
       "optional": true,
       "fields": [
-        { "name": "text", "kind": "string" },
-        { "name": "done", "kind": "boolean", "default": false }
+        {
+          "name": "text",
+          "kind": "string"
+        },
+        {
+          "name": "done",
+          "kind": "boolean",
+          "default": false
+        }
       ]
     }
   ]

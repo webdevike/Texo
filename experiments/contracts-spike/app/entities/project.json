@@ -2,9 +2,26 @@
   "name": "project",
   "title": "name",
   "fields": [
-    { "name": "name", "kind": "string", "min": 1 },
-    { "name": "lead", "kind": "string", "optional": true },
-    { "name": "stage", "kind": "enum", "options": ["planned", "active", "paused", "shipped"], "default": "planned" },
-    { "name": "health", "kind": "number", "integer": true, "min": 0, "max": 100, "default": 100 }
+    {
+      "name": "name",
+      "kind": "string",
+      "min": 1
+    },
+    {
+      "name": "team",
+      "kind": "relation",
+      "to": "team",
+      "optional": true
+    },
+    {
+      "name": "status",
+      "kind": "enum",
+      "options": [
+        "planned",
+        "active",
+        "done"
+      ],
+      "default": "planned"
+    }
   ]
 }

@@ -8,9 +8,9 @@ export default defineConfig(() => ({
   root: import.meta.dirname,
   cacheDir: './node_modules/.vite/Texo',
   server: {
-    port: 4200,
+    port: 4241,
     host: 'localhost',
-    proxy: { '/api': 'http://127.0.0.1:4321' },
+    proxy: { '/api': 'http://127.0.0.1:4341' },
   },
   preview: {
     port: 4300,

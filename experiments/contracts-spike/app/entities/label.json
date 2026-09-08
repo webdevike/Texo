@@ -1,0 +1,16 @@
+{
+  "name": "label",
+  "title": "name",
+  "fields": [
+    {
+      "name": "name",
+      "kind": "string",
+      "min": 1
+    },
+    {
+      "name": "color",
+      "kind": "string",
+      "default": "gray"
+    }
+  ]
+}

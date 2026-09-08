@@ -1,0 +1,16 @@
+{
+  "name": "team",
+  "title": "name",
+  "fields": [
+    {
+      "name": "name",
+      "kind": "string",
+      "min": 1
+    },
+    {
+      "name": "key",
+      "kind": "string",
+      "min": 1
+    }
+  ]
+}
