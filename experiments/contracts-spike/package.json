@@ -12,6 +12,7 @@
     "typescript": "^7"
   },
   "dependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@mantine/code-highlight": "^9.6.0",
     "@mantine/core": "^9.6.0",
     "@mantine/hooks": "^9.6.0",
