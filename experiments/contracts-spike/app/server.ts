@@ -7,6 +7,7 @@
 //   /api/_texo/settings/<key>   GET / PUT
 import { z } from "zod";
 import { storeHandler } from "../adapters/store-http";
+import type { Entity } from "../contracts/entity";
 import { StoreSchemaError } from "../contracts/store";
 import { manifest } from "../host/manifest";
 import { readSetting, setting, writeSetting } from "../host/settings";
@@ -15,7 +16,27 @@ import { specsDir, store } from "./texo.config";
 
 await store.migrate(setting);
 const registry = createSpecRegistry(specsDir, store);
-for (const entity of registry.all()) await store.migrate(entity);
+await migrateAll(registry, store);
+
+// W1Relations: migrate relation targets before the entities that reference them, so a spec
+// like issue -> project/member boots regardless of file order (sqlite refuses a relation to an
+// entity it has not seen yet).
+async function migrateAll(reg: { all(): Entity[] }, s: { migrate(e: Entity): Promise<void> }) {
+  const done = new Set<string>();
+  const byName = new Map(reg.all().map((e) => [e.name, e]));
+  const visit = async (e: Entity, trail: Set<string>) => {
+    if (done.has(e.name) || trail.has(e.name)) return;
+    trail.add(e.name);
+    for (const f of e.fields) {
+      const target = f.kind === "relation" ? byName.get(f.to) : undefined;
+      if (target) await visit(target, trail);
+    }
+    if (!done.has(e.name)) await s.migrate(e);
+    done.add(e.name);
+  };
+  for (const e of byName.values()) await visit(e, new Set());
+}
+// end W1Relations
 
 const api = storeHandler(() => store, (name) => (name === setting.name ? setting : registry.get(name)));
 
@@ -47,7 +68,7 @@ async function texo(req: Request, path: string): Promise<Response> {
 }
 
 const server = Bun.serve({
-  port: 4321,
+  port: 4331,
   async fetch(req) {
     const url = new URL(req.url);
     if (url.pathname.startsWith("/api/_texo/")) return texo(req, url.pathname.slice("/api/_texo/".length));

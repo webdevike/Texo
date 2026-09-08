@@ -1,6 +1,7 @@
 // Strapi's content-type builder over EntitySpec, rendered on the TexoFieldList primitive.
 // Row order IS spec order (drives table columns and form order). Saving PUTs the spec:
-// validate → migrate → write. A refused migration comes back as 409 and is shown, nothing changes.
+// validate, migrate, write. A refused migration comes back as 409 and is shown, nothing changes.
+// Group fields render their `fields` as nested rows; every row is addressed by its index path.
 import { IconDeviceFloppy, IconTrash } from '@tabler/icons-react';
 import {
   BaseButton,
@@ -21,7 +22,7 @@ import { useState } from 'react';
 import type { EntitySpec, FieldSpec } from '../../experiments/contracts-spike/contracts/entity';
 import { host } from './client';
 
-const KINDS: FieldSpec['kind'][] = ['string', 'number', 'boolean', 'enum', 'date'];
+const KINDS: FieldSpec['kind'][] = ['string', 'number', 'boolean', 'enum', 'date', 'relation', 'group'];
 const KIND_ICON: Record<FieldSpec['kind'], TexoFieldKindIcon> = {
   string: 'text',
   number: 'number',
@@ -62,27 +63,45 @@ function describe(f: FieldSpec): string {
     case 'date':
       return 'Date';
     case 'relation':
-      return `Relation (${f.to})${f.many ? ' many' : ''}`;
+      return `Relation to ${f.to || '?'}${f.many ? ' (many)' : ''}`;
     case 'group':
-      return `Component (${f.fields.length} fields)`;
+      return `Component (${f.fields.length} ${f.fields.length === 1 ? 'field' : 'fields'})`;
   }
 }
 
-function badgesOf(f: FieldSpec, saved: Set<string>): string[] {
+function badgesOf(f: FieldSpec, isNew: boolean): string[] {
   const out: string[] = [];
-  if (!saved.has(f.name)) out.push('NEW');
+  if (isNew) out.push('NEW');
   const dflt = 'default' in f ? f.default : undefined;
   if (!f.optional && dflt === undefined) out.push('REQUIRED');
   if (dflt !== undefined) out.push(`DEFAULT ${String(dflt)}`);
   if (f.kind === 'group' && f.repeatable) out.push('REPEATABLE');
+  if (f.kind === 'relation' && f.many) out.push('MANY');
   return out;
 }
 
-/** Row ids are positional: field names are editable and may be empty while drafting. */
-const rowId = (index: number) => `field-${index}`;
-const rowIndex = (id: string) => Number(id.slice('field-'.length));
+/** Row ids are index paths (`field-0/2` = third child of the first field): names are editable and may be empty. */
+const rowId = (path: number[]) => `field-${path.join('/')}`;
+const pathOf = (id: string) => id.slice('field-'.length).split('/').map(Number);
 
-function FieldEditor({ field, onChange }: { field: FieldSpec; onChange: (f: FieldSpec) => void }) {
+/** Fields list at `path` (the root when empty; a group's children otherwise). */
+function listAt(fields: FieldSpec[], path: number[]): FieldSpec[] {
+  let list = fields;
+  for (const i of path) {
+    const f = list[i];
+    list = f.kind === 'group' ? f.fields : [];
+  }
+  return list;
+}
+
+/** Returns a copy of `fields` with the list at `path` replaced by `update(list)`. */
+function updateListAt(fields: FieldSpec[], path: number[], update: (list: FieldSpec[]) => FieldSpec[]): FieldSpec[] {
+  if (path.length === 0) return update(fields);
+  const [head, ...rest] = path;
+  return fields.map((f, i) => (i === head && f.kind === 'group' ? { ...f, fields: updateListAt(f.fields, rest, update) } : f));
+}
+
+function FieldEditor({ field, onChange, entityNames }: { field: FieldSpec; onChange: (f: FieldSpec) => void; entityNames: string[] }) {
   const set = (patch: Record<string, unknown>) => onChange({ ...field, ...patch } as FieldSpec);
   return (
     <BaseStack gap="xs">
@@ -144,6 +163,32 @@ function FieldEditor({ field, onChange }: { field: FieldSpec; onChange: (f: Fiel
             <BaseSelect clearable data={field.options} label="Default" onChange={(v) => set({ default: v ?? undefined })} size="xs" value={field.default ?? null} w={150} />
           </>
         )}
+        {field.kind === 'date' && (
+          <BaseTextInput label="Default" onChange={(e) => set({ default: e.currentTarget.value || undefined })} size="xs" type="date" value={field.default ?? ''} w={180} />
+        )}
+        {field.kind === 'relation' && (
+          <>
+            <BaseSelect
+              data={entityNames}
+              label="Target entity"
+              onChange={(v) => set({ to: v ?? '' })}
+              placeholder="Pick an entity"
+              searchable
+              size="xs"
+              value={field.to || null}
+              w={200}
+            />
+            <BaseCheckbox checked={field.many ?? false} label="Many" onChange={(e) => set({ many: e.currentTarget.checked || undefined })} pb={6} size="xs" />
+          </>
+        )}
+        {field.kind === 'group' && (
+          <>
+            <BaseCheckbox checked={field.repeatable ?? false} label="Repeatable" onChange={(e) => set({ repeatable: e.currentTarget.checked || undefined })} size="xs" />
+            <BaseText c="dimmed" size="xs">
+              Fields of this component are the nested rows below.
+            </BaseText>
+          </>
+        )}
       </BaseGroup>
     </BaseStack>
   );
@@ -152,11 +197,14 @@ function FieldEditor({ field, onChange }: { field: FieldSpec; onChange: (f: Fiel
 export function SchemaBuilder({
   spec: initial,
   isNew,
+  entityNames,
   onSaved,
   onDeleted,
 }: {
   spec: EntitySpec;
   isNew: boolean;
+  /** Relation targets offered by the relation editor (manifest entity names). */
+  entityNames: string[];
   onSaved: () => void;
   onDeleted: () => void;
 }) {
@@ -166,16 +214,20 @@ export function SchemaBuilder({
   const [error, setError] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
 
-  const setField = (index: number, f: FieldSpec) =>
-    setSpec({ ...spec, fields: spec.fields.map((x, j) => (j === index ? f : x)) });
+  const setFields = (fields: FieldSpec[]) => setSpec({ ...spec, fields });
 
-  const items: TexoFieldListItem[] = spec.fields.map((f, i) => ({
-    id: rowId(i),
-    label: f.name || '(unnamed)',
-    description: describe(f),
-    kind: KIND_ICON[f.kind],
-    badges: badgesOf(f, saved),
-  }));
+  const itemsOf = (fields: FieldSpec[], parent: number[]): TexoFieldListItem[] =>
+    fields.map((f, i) => {
+      const path = [...parent, i];
+      return {
+        id: rowId(path),
+        label: f.name || '(unnamed)',
+        description: describe(f),
+        kind: KIND_ICON[f.kind],
+        badges: badgesOf(f, parent.length === 0 && !saved.has(f.name)),
+        children: f.kind === 'group' ? itemsOf(f.fields, path) : undefined,
+      };
+    });
 
   async function save() {
     setBusy(true);
@@ -203,7 +255,7 @@ export function SchemaBuilder({
             value={spec.name}
           />
           <BaseSelect
-            data={spec.fields.map((f) => f.name).filter(Boolean)}
+            data={spec.fields.filter((f) => f.name && f.kind !== 'group' && f.kind !== 'relation').map((f) => f.name)}
             label="Title field"
             onChange={(v) => setSpec({ ...spec, title: v ?? '' })}
             value={spec.title || null}
@@ -231,23 +283,36 @@ export function SchemaBuilder({
 
       <TexoFieldList
         editing={editing}
-        items={items}
-        onAdd={() => {
-          setSpec({ ...spec, fields: [...spec.fields, blankField()] });
-          setEditing(rowId(spec.fields.length));
+        items={itemsOf(spec.fields, [])}
+        onAdd={(parentId) => {
+          const parent = parentId ? pathOf(parentId) : [];
+          const index = listAt(spec.fields, parent).length;
+          setFields(updateListAt(spec.fields, parent, (list) => [...list, blankField()]));
+          setEditing(rowId([...parent, index]));
         }}
         onEdit={(id) => setEditing(editing === id ? null : id)}
         onRemove={(id) => {
-          setSpec({ ...spec, fields: spec.fields.filter((_, j) => j !== rowIndex(id)) });
+          const path = pathOf(id);
+          const index = path[path.length - 1];
+          setFields(updateListAt(spec.fields, path.slice(0, -1), (list) => list.filter((_, j) => j !== index)));
           setEditing(null);
         }}
-        onReorder={(_parent, ids) => {
-          setSpec({ ...spec, fields: ids.map((id) => spec.fields[rowIndex(id)]) });
+        onReorder={(parentId, ids) => {
+          const parent = parentId ? pathOf(parentId) : [];
+          setFields(updateListAt(spec.fields, parent, (list) => ids.map((id) => list[pathOf(id)[parent.length]])));
           setEditing(null);
         }}
         renderEditor={(item) => {
-          const index = rowIndex(item.id);
-          return <FieldEditor field={spec.fields[index]} onChange={(f) => setField(index, f)} />;
+          const path = pathOf(item.id);
+          const index = path[path.length - 1];
+          const field = listAt(spec.fields, path.slice(0, -1))[index];
+          return (
+            <FieldEditor
+              entityNames={entityNames}
+              field={field}
+              onChange={(f) => setFields(updateListAt(spec.fields, path.slice(0, -1), (list) => list.map((x, j) => (j === index ? f : x))))}
+            />
+          );
         }}
       />
 

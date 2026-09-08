@@ -12,9 +12,10 @@ const store = createHttpStore('/api');
 
 export function AdminContent({ manifest }: { manifest: Manifest }) {
   const { name } = useParams();
-  const entity = entitiesOf(manifest).find((e) => e.name === name);
+  const entities = entitiesOf(manifest);
+  const entity = entities.find((e) => e.name === name);
   if (!entity) return <BaseText c="dimmed">Unknown entity {name}</BaseText>;
-  return <EntityPage entity={entity} key={entity.name} store={store} />;
+  return <EntityPage entity={entity} key={entity.name} resolveEntity={(n) => entities.find((e) => e.name === n)} store={store} />;
 }
 
 export function AdminSchema({ manifest, onChanged }: { manifest: Manifest; onChanged: () => Promise<void> }) {
@@ -29,6 +30,7 @@ export function AdminSchema({ manifest, onChanged }: { manifest: Manifest; onCha
     <BaseStack>
       <BaseTitle order={3}>{isNew ? 'New entity' : `Schema: ${spec.name}`}</BaseTitle>
       <SchemaBuilder
+        entityNames={manifest.entities.map((e) => e.name)}
         isNew={isNew}
         key={name}
         onDeleted={async () => {

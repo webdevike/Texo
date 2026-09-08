@@ -1,0 +1,8 @@
+{
+  "name": "member",
+  "title": "name",
+  "fields": [
+    { "name": "name", "kind": "string", "min": 1 },
+    { "name": "email", "kind": "string", "optional": true }
+  ]
+}
