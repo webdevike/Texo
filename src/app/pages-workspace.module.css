@@ -1,5 +1,38 @@
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  height: 100%;
+  min-width: 0;
+}
+
+.layout[data-panel] {
+  grid-template-columns: minmax(0, 1fr) 300px;
+}
+
 .frame {
   min-width: 0;
   height: 100%;
   overflow: clip;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin-left: var(--mantine-spacing-md);
+  border-left: 1px solid var(--mantine-color-default-border);
+}
+
+.panelHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 var(--mantine-spacing-sm) var(--mantine-spacing-sm);
+  border-bottom: 1px solid var(--mantine-color-default-border);
+}
+
+.panelBody {
+  min-height: 0;
+  overflow: auto;
+  padding: var(--mantine-spacing-xs);
 }

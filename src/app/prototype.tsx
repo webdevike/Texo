@@ -76,6 +76,9 @@ type PrototypeContextValue = ProjectDocumentState<PrototypeDocument> & {
   focus: (id: string | null) => void;
   visibleIds: readonly string[];
   setVisibleIds: (ids: string[]) => void;
+  /** Requests column beside the page frame. */
+  panelOpen: boolean;
+  setPanelOpen: (open: boolean) => void;
   add: (comment: PrototypeComment) => void;
   change: (id: string, patch: Partial<PrototypeComment>) => void;
   remove: (id: string) => void;
@@ -100,6 +103,7 @@ export function PrototypeProvider({
   const [active, setActive] = useState(false);
   const [focusedId, focus] = useState<string | null>(null);
   const [visibleIds, setVisibleIds] = useState<string[]>([]);
+  const [panelOpen, setPanelOpen] = useState(false);
 
   useEffect(() => {
     focus(null);
@@ -116,6 +120,8 @@ export function PrototypeProvider({
       focus,
       visibleIds,
       setVisibleIds,
+      panelOpen,
+      setPanelOpen,
       add: (comment) =>
         update((current) => ({
           ...current,
@@ -134,7 +140,7 @@ export function PrototypeProvider({
           comments: current.comments.filter((comment) => comment.id !== id),
         })),
     }),
-    [file, page, active, focusedId, visibleIds, update],
+    [file, page, active, focusedId, visibleIds, panelOpen, update],
   );
 
   return (

@@ -47,6 +47,8 @@ import { PrototypePanel, PrototypeProvider, usePrototype } from './prototype';
 import { ChatDock } from './chat-panel';
 import { ChatProvider } from './use-chat';
 import { componentLibrary, projectComponents } from '../extensions/registry';
+import { SideNav } from './side-nav';
+import styles from './app.module.css';
 
 const {
   BaseAccordion,
@@ -116,6 +118,14 @@ const navigationItems = [
   },
   { component: null, label: 'Custom', name: 'Custom', path: '/custom' },
   ...componentNavigationItems,
+];
+
+/** Routes shown under the Components section of the sidebar. */
+const componentPreviews = [
+  { label: 'Dashboard', path: '/dashboard' },
+  { label: 'Attio dashboard', path: '/dashboard/attio' },
+  { label: 'Custom components', path: '/custom' },
+  ...componentNavigationItems.map(({ label, path }) => ({ label, path })),
 ];
 
 const treeData = [
@@ -368,16 +378,6 @@ function Workspace() {
   const onPages = pathname.startsWith('/pages');
   const [panelEnabled, setPanelEnabled] = useState(false);
   const [propertyTab, setPropertyTab] = useState<string | null>('colors');
-  const [activeRail, setActiveRail] = useState<string | null>(
-    pathname === '/canvas'
-      ? 'library'
-      : pathname.startsWith('/pages')
-        ? 'prototype'
-        : 'theme',
-  );
-  useEffect(() => {
-    if (pathname === '/canvas') setActiveRail('library');
-  }, [pathname]);
   const {
     applyPreset,
     canRedo,
@@ -516,6 +516,10 @@ function Workspace() {
     themeActions
   );
 
+  const requestCount = (proto.document?.comments ?? []).filter(
+    (comment) => comment.page === pageId && !comment.resolved,
+  ).length;
+
   const pageToolbar = (
     <>
       <BaseText c={proto.error ? 'red' : 'dimmed'} size="xs" truncate>
@@ -544,11 +548,22 @@ function Workspace() {
           </BaseButton>
         ) : null}
         <BaseButton
+          aria-pressed={proto.panelOpen}
+          leftSection={<IconMessageCircle size={14} />}
+          onClick={() => proto.setPanelOpen(!proto.panelOpen)}
+          size="compact-sm"
+          variant={proto.panelOpen ? 'light' : 'subtle'}
+          color={proto.panelOpen ? undefined : 'gray'}
+        >
+          Requests
+          {requestCount ? ` ${requestCount}` : ''}
+        </BaseButton>
+        <BaseButton
           aria-pressed={proto.active}
           leftSection={<IconClick size={14} />}
           onClick={() => {
             proto.setActive(!proto.active);
-            if (!proto.active) setActiveRail('prototype');
+            if (!proto.active) proto.setPanelOpen(true);
           }}
           size="compact-sm"
           variant={proto.active ? 'light' : 'default'}
@@ -693,90 +708,50 @@ function Workspace() {
     </>
   );
 
-  const pagesList = (
-    <BaseStack gap={2}>
-      {navigationItems.map((item) => (
-        <BaseNavLink
-          active={pathname === item.path}
-          key={item.path}
-          label={item.label}
-          onClick={() => navigate(item.path)}
-        />
-      ))}
-    </BaseStack>
-  );
-
-  const rail = [
-    {
-      body: <CanvasLibrary />,
-      header: (
-        <BaseText fw={600} px="sm" size="sm">
-          Components
-        </BaseText>
-      ),
-      icon: <IconComponents size={18} />,
-      id: 'library',
-      label: 'Components',
-      subheader: (
-        <BaseText c="dimmed" size="xs">
-          Drag or add to canvas
-        </BaseText>
-      ),
-    },
-    {
-      body: themeSettings,
-      header: themePicker,
-      icon: <IconPalette size={18} />,
-      id: 'theme',
-      label: 'Theme',
-      subheader: inspectorTabs,
-    },
-    {
-      body: pagesList,
-      header: (
-        <BaseText fw={600} px="sm" size="sm">
-          Pages
-        </BaseText>
-      ),
-      icon: <IconLayoutGrid size={18} />,
-      id: 'pages',
-      label: 'Pages',
-    },
-    {
-      body: <PrototypePanel />,
-      header: (
-        <BaseText fw={600} px="sm" size="sm">
-          Requests
-        </BaseText>
-      ),
-      icon: <IconMessageCircle size={18} />,
-      id: 'prototype',
-      label: 'Requests',
-      subheader: (
-        <BaseText c="dimmed" size="xs">
-          Described interactions, not built ones
-        </BaseText>
-      ),
-    },
-  ];
-
   return (
     <CanvasProvider registry={componentLibrary}>
       <TexoAppShell
         actions={actions}
-        activeRail={activeRail}
-        onRailChange={(id) => {
-          setActiveRail(id);
-          if (id === 'library' && pathname !== '/canvas') navigate('/canvas');
-        }}
         footer={<ChatDock />}
         previewTabs={onPages ? pageToolbar : previewTabs}
-        rail={rail}
+        sidebar={<SideNav previews={componentPreviews} />}
       >
         <Routes>
           <Route path="/" element={<Navigate to="/theme" replace />} />
-          <Route path="/theme" element={<ThemePage />} />
-          <Route path="/canvas" element={<CanvasPage />} />
+          <Route
+            path="/theme"
+            element={
+              <div className={styles.split}>
+                <div className={styles.tools}>
+                  <div className={styles.picker}>{themePicker}</div>
+                  {inspectorTabs}
+                  {themeSettings}
+                </div>
+                <div className={styles.content}>
+                  <ThemePage />
+                </div>
+              </div>
+            }
+          />
+          <Route
+            path="/canvas"
+            element={
+              <div className={styles.split}>
+                <div className={styles.tools}>
+                  <BaseText fw={600} size="sm">
+                    Components
+                  </BaseText>
+                  <BaseText c="dimmed" size="xs">
+                    Drag or add to canvas
+                  </BaseText>
+                  <CanvasLibrary />
+                </div>
+                <div className={styles.content}>
+                  <CanvasPage />
+                </div>
+              </div>
+            }
+          />
           <Route path="/pages" element={<PagesWorkspace />} />
           <Route path="/pages/:pageId" element={<PagesWorkspace />} />
           <Route path="/cards" element={<CardsPage />} />

@@ -1,75 +1,29 @@
-/* Linear-style shell: rail and sidebar sit on a quiet surface with no borders;
+/* Linear-style shell: one sidebar on a quiet surface with no borders;
    the workspace is an inset card; an optional footer strip runs under it. */
 .root {
   height: 100dvh;
   position: relative;
   display: grid;
-  grid-template-columns: var(--texo-rail-width) minmax(0, 1fr);
+  grid-template-columns: var(--texo-sidebar-width) minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr) auto;
   background: var(--texo-color-surface, var(--mantine-color-gray-0));
 }
 
-.root[data-panel-open] {
-  grid-template-columns: var(--texo-rail-width) var(--texo-panel-width) minmax(0, 1fr);
-}
-
-.rail {
-  grid-row: 1 / -1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding-block: var(--mantine-spacing-xs);
-}
-
-.railButton[data-active] {
-  color: var(--mantine-primary-color-filled);
-}
-
-.panel {
+.sidebar {
   grid-row: 1 / -1;
   min-width: 0;
   min-height: 0;
-  display: grid;
-  grid-template-rows: 56px 48px minmax(0, 1fr);
+  overflow: auto;
+  padding: var(--mantine-spacing-sm) var(--mantine-spacing-xs);
 }
 
-.resizer {
-  position: absolute;
-  z-index: 10;
-  top: 0;
-  bottom: 0;
-  left: calc(var(--texo-rail-width) + var(--texo-panel-width));
-  width: 7px;
-  cursor: col-resize;
-  touch-action: none;
-  transform: translateX(-50%);
-}
-
-.panelHeader,
-.panelSubheader,
 .actions,
 .previewTabs {
   min-width: 0;
   display: flex;
   align-items: center;
   padding-inline: var(--mantine-spacing-sm);
-}
-
-.actions,
-.previewTabs {
   border-bottom: 1px solid var(--mantine-color-default-border);
-}
-
-.panelHeader {
-  padding-inline: 0;
-}
-
-.panelBody {
-  min-width: 0;
-  min-height: 0;
-  overflow: auto;
-  padding: var(--mantine-spacing-sm);
 }
 
 .workspace {
@@ -84,12 +38,8 @@
   overflow: hidden;
 }
 
-.root:not([data-panel-open]) .workspace {
-  margin-left: 0;
-}
-
 .footer {
-  grid-column: -2 / -1;
+  grid-column: 2 / -1;
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -114,28 +64,14 @@
 }
 
 @media (max-width: 48em) {
-  .root,
-  .root[data-panel-open] {
+  .root {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr) auto;
   }
 
-  .rail,
-  .panel {
+  .sidebar {
     grid-row: auto;
-  }
-
-  .rail {
-    flex-direction: row;
-    padding-inline: var(--mantine-spacing-xs);
-  }
-
-  .panel {
-    grid-template-rows: 56px 48px auto;
-  }
-
-  .panelBody {
-    max-height: 240px;
+    max-height: 40vh;
   }
 
   .workspace {
@@ -144,9 +80,5 @@
 
   .footer {
     grid-column: 1 / -1;
-  }
-
-  .resizer {
-    display: none;
   }
 }

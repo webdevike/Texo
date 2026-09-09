@@ -48,11 +48,26 @@ export function pageIdFromPath(pathname: string) {
 
 export const previewUrl = (pageId: string | null) =>
   pageId ? `${PREVIEW_BASE}/pages/${pageId}` : `${PREVIEW_BASE}/`;
+const PAGES_KEY = 'texo.pages';
 
 export function PreviewProvider({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const [pages, setPages] = useState<PreviewPage[]>([]);
+  // The frame is the source of truth, but it only exists on /pages; remember
+  // its last answer so the sidebar lists pages on every route and after reload.
+  const [pages, setPagesState] = useState<PreviewPage[]>(() => {
+    try {
+      return JSON.parse(
+        localStorage.getItem(PAGES_KEY) ?? '[]',
+      ) as PreviewPage[];
+    } catch {
+      return [];
+    }
+  });
+  const setPages = (next: PreviewPage[]) => {
+    setPagesState(next);
+    localStorage.setItem(PAGES_KEY, JSON.stringify(next));
+  };
   const [framePage, setFramePage] = useState<string | null>(null);
   const [frame, setFrame] = useState<HTMLIFrameElement | null>(null);
   const known = useRef<string[] | null>(null);
