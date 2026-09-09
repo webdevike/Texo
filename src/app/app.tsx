@@ -8,7 +8,6 @@ import {
   IconDotsVertical,
   IconLayoutGrid,
   IconComponents,
-  IconMessage,
   IconMessageCircle,
   IconMoon,
   IconPalette,
@@ -45,7 +44,7 @@ import {
   usePreview,
 } from './preview';
 import { PrototypePanel, PrototypeProvider, usePrototype } from './prototype';
-import { ChatHeader, ChatPanel, ChatSubheader } from './chat-panel';
+import { ChatDock } from './chat-panel';
 import { ChatProvider } from './use-chat';
 import { componentLibrary, projectComponents } from '../extensions/registry';
 
@@ -373,7 +372,7 @@ function Workspace() {
     pathname === '/canvas'
       ? 'library'
       : pathname.startsWith('/pages')
-        ? 'chat'
+        ? 'prototype'
         : 'theme',
   );
   useEffect(() => {
@@ -709,14 +708,6 @@ function Workspace() {
 
   const rail = [
     {
-      body: <ChatPanel />,
-      header: <ChatHeader />,
-      icon: <IconMessage size={18} />,
-      id: 'chat',
-      label: 'Chat',
-      subheader: <ChatSubheader />,
-    },
-    {
       body: <CanvasLibrary />,
       header: (
         <BaseText fw={600} px="sm" size="sm">
@@ -808,6 +799,8 @@ function Workspace() {
             ))}
           <Route path="*" element={<Navigate to="/theme" replace />} />
         </Routes>
+
+        <ChatDock />
 
         <TexoPanel
           gutter={0}

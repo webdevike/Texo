@@ -1,9 +1,14 @@
 import {
-  IconChevronDown,
+  IconArrowUp,
+  IconArrowsMaximize,
+  IconArrowsMinimize,
+  IconDots,
+  IconHistory,
+  IconMinus,
   IconPlayerStop,
-  IconPlus,
-  IconSend,
+  IconSparkles,
   IconTrash,
+  IconX,
 } from '@tabler/icons-react';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -35,98 +40,192 @@ const statusLabel = {
   error: 'Error',
 } as const;
 
-/** 56px rail header: which thread, plus a new one. */
-export function ChatHeader() {
+/**
+ * Linear-style agent dock: a small fixed footer at the bottom right with one
+ * chip per open thread, an Ask Agent button and thread history. A chip opens
+ * the floating conversation window above it.
+ */
+export function ChatDock() {
   const chat = useChat();
+  const [openIds, setOpenIds] = useState<string[]>([]);
+  const [shown, setShown] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const active = chat.threads.find((thread) => thread.id === chat.activeId);
+
+  // A newly created or chosen thread becomes a chip and shows its window.
+  useEffect(() => {
+    if (!chat.activeId) return;
+    setOpenIds((ids) =>
+      ids.includes(chat.activeId!) ? ids : [...ids, chat.activeId!],
+    );
+    setShown(true);
+  }, [chat.activeId]);
+
+  if (!chat.available) return null;
+
+  const close = (id: string) => {
+    const rest = openIds.filter((item) => item !== id);
+    setOpenIds(rest);
+    if (chat.activeId === id) {
+      chat.open(rest[rest.length - 1] ?? null);
+      if (rest.length === 0) setShown(false);
+    }
+  };
+
   return (
-    <BaseGroup
-      gap="xs"
-      justify="space-between"
-      px="sm"
-      wrap="nowrap"
-      style={{ flex: 1, minWidth: 0 }}
-    >
-      <BaseMenu position="bottom-start" width={280}>
-        <BaseMenu.Target>
-          <BaseButton
-            rightSection={<IconChevronDown size={12} />}
-            size="compact-sm"
-            variant="subtle"
-            color="gray"
-            styles={{ label: { overflow: 'hidden', textOverflow: 'ellipsis' } }}
-          >
-            {active ? active.title || 'New thread' : 'Threads'}
-          </BaseButton>
-        </BaseMenu.Target>
-        <BaseMenu.Dropdown>
-          {chat.threads.length === 0 && (
-            <BaseMenu.Label>No threads yet</BaseMenu.Label>
-          )}
-          {chat.threads.map((thread) => (
-            <BaseMenu.Item key={thread.id} onClick={() => chat.open(thread.id)}>
-              <BaseText size="sm" truncate>
-                {thread.title || 'New thread'}
+    <>
+      {shown && active && (
+        <div className={classes.window} data-expanded={expanded || undefined}>
+          <div className={classes.windowHeader}>
+            <BaseGroup gap={6} wrap="nowrap" style={{ minWidth: 0 }}>
+              <BaseText size="sm" fw={600} truncate>
+                {active.title || 'New thread'}
               </BaseText>
-            </BaseMenu.Item>
-          ))}
-        </BaseMenu.Dropdown>
-      </BaseMenu>
-      <BaseTooltip label="New thread (new omp session)" withArrow>
-        <BaseActionIcon
-          aria-label="New thread"
+              <Status />
+            </BaseGroup>
+            <BaseGroup gap={2} wrap="nowrap">
+              <BaseMenu position="bottom-end">
+                <BaseMenu.Target>
+                  <BaseActionIcon
+                    aria-label="Thread options"
+                    size="sm"
+                    variant="subtle"
+                    color="gray"
+                  >
+                    <IconDots size={14} />
+                  </BaseActionIcon>
+                </BaseMenu.Target>
+                <BaseMenu.Dropdown>
+                  <BaseMenu.Item
+                    color="red"
+                    leftSection={<IconTrash size={14} />}
+                    onClick={() => {
+                      close(active.id);
+                      chat.remove(active.id);
+                    }}
+                  >
+                    Delete thread
+                  </BaseMenu.Item>
+                </BaseMenu.Dropdown>
+              </BaseMenu>
+              <BaseActionIcon
+                aria-label="Minimize"
+                onClick={() => setShown(false)}
+                size="sm"
+                variant="subtle"
+                color="gray"
+              >
+                <IconMinus size={14} />
+              </BaseActionIcon>
+              <BaseActionIcon
+                aria-label={expanded ? 'Shrink' : 'Expand'}
+                onClick={() => setExpanded((value) => !value)}
+                size="sm"
+                variant="subtle"
+                color="gray"
+              >
+                {expanded ? (
+                  <IconArrowsMinimize size={14} />
+                ) : (
+                  <IconArrowsMaximize size={14} />
+                )}
+              </BaseActionIcon>
+              <BaseActionIcon
+                aria-label="Close"
+                onClick={() => close(active.id)}
+                size="sm"
+                variant="subtle"
+                color="gray"
+              >
+                <IconX size={14} />
+              </BaseActionIcon>
+            </BaseGroup>
+          </div>
+          <ChatThreadView />
+        </div>
+      )}
+      <div className={classes.dock} role="toolbar" aria-label="Agent threads">
+        {openIds.map((id) => {
+          const thread = chat.threads.find((item) => item.id === id);
+          if (!thread) return null;
+          const selected = shown && id === chat.activeId;
+          return (
+            <button
+              aria-pressed={selected}
+              className={classes.chip}
+              key={id}
+              onClick={() => {
+                if (selected) setShown(false);
+                else {
+                  chat.open(id);
+                  setShown(true);
+                }
+              }}
+              type="button"
+            >
+              <span className={classes.chipLabel}>
+                {thread.title || 'New thread'}
+              </span>
+            </button>
+          );
+        })}
+        <BaseButton
+          leftSection={<IconSparkles size={14} />}
           onClick={chat.create}
+          size="compact-sm"
           variant="subtle"
+          color="gray"
         >
-          <IconPlus size={16} />
-        </BaseActionIcon>
-      </BaseTooltip>
-    </BaseGroup>
+          Ask Agent
+        </BaseButton>
+        <BaseMenu position="top-end" width={300}>
+          <BaseMenu.Target>
+            <BaseActionIcon
+              aria-label="Thread history"
+              size="sm"
+              variant="subtle"
+              color="gray"
+            >
+              <IconHistory size={16} />
+            </BaseActionIcon>
+          </BaseMenu.Target>
+          <BaseMenu.Dropdown>
+            {chat.threads.length === 0 && (
+              <BaseMenu.Label>No threads yet</BaseMenu.Label>
+            )}
+            {chat.threads.map((thread) => (
+              <BaseMenu.Item
+                key={thread.id}
+                onClick={() => chat.open(thread.id)}
+              >
+                <BaseText size="sm" truncate>
+                  {thread.title || 'New thread'}
+                </BaseText>
+              </BaseMenu.Item>
+            ))}
+          </BaseMenu.Dropdown>
+        </BaseMenu>
+      </div>
+    </>
   );
 }
 
-/** 48px rail subheader: session status and thread removal. */
-export function ChatSubheader() {
+function Status() {
   const chat = useChat();
-  if (!chat.activeId) {
-    return (
-      <BaseText c="dimmed" size="xs">
-        Each thread is its own omp session in this repo.
-      </BaseText>
-    );
-  }
   const status = chat.active?.status ?? 'idle';
   return (
-    <BaseGroup
-      gap="xs"
-      justify="space-between"
-      wrap="nowrap"
-      style={{ flex: 1, minWidth: 0 }}
-    >
-      <BaseGroup gap={6} wrap="nowrap">
-        {status === 'streaming' || status === 'starting' ? (
-          <BaseLoader size={12} />
-        ) : null}
-        <BaseText c={status === 'error' ? 'red' : 'dimmed'} size="xs" truncate>
-          {chat.active?.message ?? statusLabel[status]}
-        </BaseText>
-      </BaseGroup>
-      <BaseTooltip label="Remove thread" withArrow>
-        <BaseActionIcon
-          aria-label="Remove thread"
-          color="red"
-          onClick={() => chat.activeId && chat.remove(chat.activeId)}
-          size="sm"
-          variant="subtle"
-        >
-          <IconTrash size={14} />
-        </BaseActionIcon>
-      </BaseTooltip>
+    <BaseGroup gap={4} wrap="nowrap">
+      {status === 'streaming' || status === 'starting' ? (
+        <BaseLoader size={10} />
+      ) : null}
+      <BaseText c={status === 'error' ? 'red' : 'dimmed'} size="xs" truncate>
+        {chat.active?.message ?? statusLabel[status]}
+      </BaseText>
     </BaseGroup>
   );
 }
 
-export function ChatPanel() {
+function ChatThreadView() {
   const chat = useChat();
   const [draft, setDraft] = useState('');
   const listRef = useRef<HTMLDivElement>(null);
@@ -137,32 +236,6 @@ export function ChatPanel() {
     const list = listRef.current;
     if (list) list.scrollTop = list.scrollHeight;
   }, [items]);
-
-  if (!chat.available) {
-    return (
-      <BaseText c="dimmed" size="sm">
-        Chat needs the Vite dev server; it is not part of the production build.
-      </BaseText>
-    );
-  }
-
-  if (!chat.activeId) {
-    return (
-      <BaseStack gap="sm">
-        <BaseText c="dimmed" size="sm">
-          Describe the page you want. The agent builds it from the Texo UI
-          system and it appears as a page tab.
-        </BaseText>
-        <BaseButton
-          leftSection={<IconPlus size={14} />}
-          onClick={chat.create}
-          size="compact-sm"
-        >
-          New thread
-        </BaseButton>
-      </BaseStack>
-    );
-  }
 
   const submit = () => {
     const text = draft.trim();
@@ -176,8 +249,8 @@ export function ChatPanel() {
       <div className={classes.list} ref={listRef}>
         {items.length === 0 && (
           <BaseText c="dimmed" size="sm">
-            Try: "Design a settings page with profile, notifications and billing
-            sections."
+            Describe the page you want. It is built from the Texo UI system and
+            shows up as a page tab.
           </BaseText>
         )}
         {items.map((item) => (
@@ -188,7 +261,7 @@ export function ChatPanel() {
         <BaseTextarea
           aria-label="Message"
           autosize
-          minRows={2}
+          minRows={1}
           maxRows={8}
           onChange={(event) => setDraft(event.currentTarget.value)}
           onKeyDown={(event) => {
@@ -197,28 +270,30 @@ export function ChatPanel() {
               submit();
             }
           }}
-          placeholder="Describe the page or the change"
+          placeholder={items.length ? 'Reply...' : 'Ask for a page...'}
           value={draft}
+          variant="unstyled"
         />
         <BaseGroup gap="xs" justify="flex-end">
           {status === 'streaming' && (
             <BaseButton
               leftSection={<IconPlayerStop size={14} />}
               onClick={chat.abort}
-              size="compact-sm"
+              size="compact-xs"
               variant="default"
             >
               Stop
             </BaseButton>
           )}
-          <BaseButton
+          <BaseActionIcon
+            aria-label="Send"
             disabled={!draft.trim()}
-            leftSection={<IconSend size={14} />}
             onClick={submit}
-            size="compact-sm"
+            size="sm"
+            variant="filled"
           >
-            Send
-          </BaseButton>
+            <IconArrowUp size={14} />
+          </BaseActionIcon>
         </BaseGroup>
       </div>
     </div>

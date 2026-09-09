@@ -1,8 +1,81 @@
+.dock {
+  position: fixed;
+  right: 16px;
+  bottom: 0;
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: calc(100vw - 32px);
+  padding: 4px 6px;
+  border: 1px solid var(--mantine-color-default-border);
+  border-bottom: 0;
+  border-radius: var(--mantine-radius-md) var(--mantine-radius-md) 0 0;
+  background: var(--mantine-color-body);
+}
+
+.chip {
+  max-width: 200px;
+  padding: 3px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--mantine-radius-sm);
+  background: var(--mantine-color-default-hover);
+  color: inherit;
+  font: inherit;
+  font-size: var(--mantine-font-size-xs);
+  cursor: pointer;
+}
+
+.chip:hover {
+  border-color: var(--mantine-color-default-border);
+}
+
+.chip[aria-pressed='true'] {
+  background: var(--mantine-primary-color-light);
+  color: var(--mantine-primary-color-light-color);
+}
+
+.chipLabel {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.window {
+  position: fixed;
+  right: 16px;
+  bottom: 44px;
+  z-index: 150;
+  display: flex;
+  flex-direction: column;
+  width: min(440px, calc(100vw - 32px));
+  height: min(640px, calc(100vh - 80px));
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-md);
+  background: var(--mantine-color-body);
+  box-shadow: var(--mantine-shadow-lg);
+  overflow: hidden;
+}
+
+.window[data-expanded] {
+  width: min(760px, calc(100vw - 32px));
+  height: calc(100vh - 80px);
+}
+
+.windowHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mantine-spacing-xs);
+  padding: 6px 6px 6px 12px;
+  border-bottom: 1px solid var(--mantine-color-default-border);
+}
+
 .root {
   display: flex;
   flex-direction: column;
-  gap: var(--mantine-spacing-sm);
-  height: 100%;
+  flex: 1;
   min-height: 0;
 }
 
@@ -13,7 +86,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--mantine-spacing-sm);
-  padding-bottom: var(--mantine-spacing-xs);
+  padding: var(--mantine-spacing-sm);
 }
 
 .list > * {
@@ -23,9 +96,11 @@
 .composer {
   display: flex;
   flex-direction: column;
-  gap: var(--mantine-spacing-xs);
-  padding-top: var(--mantine-spacing-xs);
-  border-top: 1px solid var(--mantine-color-default-border);
+  gap: 4px;
+  margin: 0 var(--mantine-spacing-xs) var(--mantine-spacing-xs);
+  padding: 6px 8px 8px;
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-md);
 }
 
 .text {
