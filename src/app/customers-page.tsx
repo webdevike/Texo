@@ -200,6 +200,10 @@ export function CustomersPage() {
                   color={filter === value ? undefined : 'gray'}
                   aria-pressed={filter === value}
                   onClick={() => setFilter(value)}
+                  data-target="filter"
+                  data-target-label="Quick filter"
+                  data-record={value}
+                  data-record-label={value}
                 >
                   {value}
                 </BaseButton>
@@ -212,11 +216,17 @@ export function CustomersPage() {
               value={search}
               onChange={(event) => setSearch(event.currentTarget.value)}
               w={240}
+              data-target="search"
+              data-target-label="Search"
             />
           </BaseGroup>
         }
       >
-        <div className={classes.table}>
+        <div
+          className={classes.table}
+          data-target="table"
+          data-target-label="Customer table"
+        >
           <TexoDataTable
             columns={columns}
             rows={rows}

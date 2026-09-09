@@ -1,9 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { validateCanvasDocument, type CanvasDocument } from './canvas-document';
 
-export type CanvasDocumentState = {
-  document: CanvasDocument | null;
-  update: (fn: (document: CanvasDocument) => CanvasDocument) => void;
+/** A JSON file under project/ served by tools/project-files.ts. */
+export type ProjectFile<T> = {
+  endpoint: string;
+  label: string;
+  validate: (value: unknown) => asserts value is T;
+};
+
+export type ProjectDocumentState<T> = {
+  document: T | null;
+  update: (fn: (document: T) => T) => void;
   save: () => Promise<void>;
   reload: () => Promise<void>;
   dirty: boolean;
@@ -12,8 +18,8 @@ export type CanvasDocumentState = {
   conflict: boolean;
 };
 
-type State = {
-  document: CanvasDocument | null;
+type State<T> = {
+  document: T | null;
   revision: string | null;
   dirty: boolean;
   busy: boolean;
@@ -25,8 +31,6 @@ type Operation = {
   controller: AbortController;
   kind: 'read' | 'reload' | 'save';
 };
-const conflictMessage =
-  'project/canvas.json changed elsewhere. Your local changes are retained. Reload to discard them and use the file.';
 
 class RequestError extends Error {
   constructor(
@@ -39,35 +43,43 @@ class RequestError extends Error {
 
 async function responseData(
   response: Response,
+  label: string,
 ): Promise<Record<string, unknown>> {
   let data: unknown;
   try {
     data = await response.json();
   } catch {
     throw new Error(
-      'The canvas file API did not return JSON. Check that the Vite canvas plugin is running.',
+      response.ok
+        ? `Invalid ${label} API response.`
+        : `${label} request failed (${response.status}).`,
     );
   }
   if (!data || typeof data !== 'object' || Array.isArray(data))
-    throw new Error('Invalid canvas file API response.');
+    throw new Error(`Invalid ${label} API response.`);
   const record = data as Record<string, unknown>;
   if (!response.ok)
     throw new RequestError(
       response.status,
       typeof record.error === 'string'
         ? record.error
-        : `Canvas request failed (${response.status}).`,
+        : `${label} request failed (${response.status}).`,
     );
   if (
     typeof record.revision !== 'string' ||
     !/^[a-f0-9]{64}$/.test(record.revision)
   )
-    throw new Error('Canvas file API returned an invalid revision.');
+    throw new Error(`${label} API returned an invalid revision.`);
   return record;
 }
 
-export function useCanvasDocument(): CanvasDocumentState {
-  const [state, setState] = useState<State>({
+export function useProjectDocument<T>(
+  file: ProjectFile<T>,
+): ProjectDocumentState<T> {
+  const { endpoint, label } = file;
+  const validate: (value: unknown) => asserts value is T = file.validate;
+  const conflictMessage = `${label} changed elsewhere. Your local changes are retained. Reload to discard them and use the file.`;
+  const [state, setState] = useState<State<T>>({
     document: null,
     revision: null,
     dirty: false,
@@ -79,7 +91,7 @@ export function useCanvasDocument(): CanvasDocumentState {
   const mounted = useRef(false);
   const operation = useRef<Operation | null>(null);
   const editVersion = useRef(0);
-  const commit = useCallback((next: State) => {
+  const commit = useCallback((next: State<T>) => {
     current.current = next;
     if (mounted.current) setState(next);
   }, []);
@@ -99,12 +111,13 @@ export function useCanvasDocument(): CanvasDocumentState {
         commit({ ...current.current, busy: true, error: null });
       try {
         const data = await responseData(
-          await fetch('/__texo/canvas', {
+          await fetch(endpoint, {
             cache: 'no-store',
             signal: request.controller.signal,
           }),
+          label,
         );
-        validateCanvasDocument(data.document);
+        validate(data.document);
         if (!mounted.current || operation.current !== request) return;
         const latest = current.current;
         if (explicit && startingEdit !== editVersion.current) {
@@ -112,8 +125,7 @@ export function useCanvasDocument(): CanvasDocumentState {
             ...latest,
             busy: false,
             conflict: true,
-            error:
-              'The canvas was edited while reloading. Those edits were retained. Reload again to discard them.',
+            error: `${label} was edited while reloading. Those edits were retained. Reload again to discard them.`,
           });
         } else if (explicit || !latest.document) {
           commit({
@@ -162,19 +174,17 @@ export function useCanvasDocument(): CanvasDocumentState {
               error instanceof RequestError &&
               error.status === 422),
           error:
-            error instanceof Error
-              ? error.message
-              : 'Could not load project/canvas.json.',
+            error instanceof Error ? error.message : `Could not load ${label}.`,
         });
       } finally {
         if (operation.current === request) operation.current = null;
       }
     },
-    [commit],
+    [commit, conflictMessage, endpoint, label, validate],
   );
 
   const update = useCallback(
-    (fn: (document: CanvasDocument) => CanvasDocument) => {
+    (fn: (document: T) => T) => {
       const previous = current.current;
       if (!previous.document) return;
       const document = fn(previous.document);
@@ -201,7 +211,7 @@ export function useCanvasDocument(): CanvasDocumentState {
     if (!snapshot.dirty) return;
     let body: string;
     try {
-      validateCanvasDocument(snapshot.document);
+      validate(snapshot.document);
       body = JSON.stringify({
         document: snapshot.document,
         revision: snapshot.revision,
@@ -210,9 +220,7 @@ export function useCanvasDocument(): CanvasDocumentState {
       commit({
         ...snapshot,
         error:
-          error instanceof Error
-            ? error.message
-            : 'The canvas cannot be saved.',
+          error instanceof Error ? error.message : `${label} cannot be saved.`,
       });
       return;
     }
@@ -226,12 +234,13 @@ export function useCanvasDocument(): CanvasDocumentState {
     commit({ ...snapshot, busy: true, error: null });
     try {
       const data = await responseData(
-        await fetch('/__texo/canvas', {
+        await fetch(endpoint, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', 'x-texo-editor': '1' },
           body,
           signal: request.controller.signal,
         }),
+        label,
       );
       if (!mounted.current || operation.current !== request) return;
       commit({
@@ -256,14 +265,12 @@ export function useCanvasDocument(): CanvasDocumentState {
           (error instanceof RequestError &&
             (error.status === 409 || error.status === 422)),
         error:
-          error instanceof Error
-            ? error.message
-            : 'Could not save project/canvas.json.',
+          error instanceof Error ? error.message : `Could not save ${label}.`,
       });
     } finally {
       if (operation.current === request) operation.current = null;
     }
-  }, [commit]);
+  }, [commit, conflictMessage, endpoint, label, validate]);
 
   const reload = useCallback(() => load(true), [load]);
   useEffect(() => {

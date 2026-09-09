@@ -44,7 +44,11 @@ export interface TexoDataTableSort {
 export interface TexoDataTableProps<T extends { id: string }> {
   columns: readonly TexoDataTableColumn[];
   rows: readonly T[];
-  renderCell?: (column: TexoDataTableColumn, value: unknown, row: T) => ReactNode;
+  renderCell?: (
+    column: TexoDataTableColumn,
+    value: unknown,
+    row: T,
+  ) => ReactNode;
   sort?: readonly TexoDataTableSort[];
   onSortChange?: (sort: TexoDataTableSort[]) => void;
   onOpen?: (row: T) => void;
@@ -59,22 +63,47 @@ export interface TexoDataTableProps<T extends { id: string }> {
   overscan?: number;
 }
 
-const ROW_HEIGHT: Record<'compact' | 'comfortable', number> = { compact: 36, comfortable: 46 };
+const ROW_HEIGHT: Record<'compact' | 'comfortable', number> = {
+  compact: 36,
+  comfortable: 46,
+};
 const SELECTION_TRACK = '42px';
 const NO_SORT: readonly TexoDataTableSort[] = [];
 const NO_SELECTION: readonly string[] = [];
 
 function defaultCell(_column: TexoDataTableColumn, value: unknown) {
-  if (value === undefined || value === null) return <BaseText c="dimmed" size="sm">-</BaseText>;
-  if (typeof value === 'object') return <BaseText size="sm" className={classes.default}>{JSON.stringify(value)}</BaseText>;
-  return <BaseText size="sm" className={classes.default}>{String(value)}</BaseText>;
+  if (value === undefined || value === null)
+    return (
+      <BaseText c="dimmed" size="sm">
+        -
+      </BaseText>
+    );
+  if (typeof value === 'object')
+    return (
+      <BaseText size="sm" className={classes.default}>
+        {JSON.stringify(value)}
+      </BaseText>
+    );
+  return (
+    <BaseText size="sm" className={classes.default}>
+      {String(value)}
+    </BaseText>
+  );
 }
 
 /** Next sort list after clicking `field`. `additive` (shift) keeps other keys. */
-export function cycleSort(current: readonly TexoDataTableSort[], field: string, additive: boolean): TexoDataTableSort[] {
+export function cycleSort(
+  current: readonly TexoDataTableSort[],
+  field: string,
+  additive: boolean,
+): TexoDataTableSort[] {
   const existing = current.find((s) => s.field === field);
   const next: TexoDataTableSort | undefined =
-    existing === undefined ? { field, direction: 'asc' } : existing.direction === 'asc' ? { field, direction: 'desc' } : undefined;
+    existing === undefined
+      ? { field, direction: 'asc' }
+      : existing.direction === 'asc'
+        ? { field, direction: 'desc' }
+        : undefined;
   if (!additive) return next ? [next] : [];
   const rest = current.filter((s) => s.field !== field);
   if (!next) return rest;
@@ -116,18 +145,43 @@ const TableRow = memo(function TableRow<T extends { id: string }>({
       data-even={index % 2 === 1 ? '' : undefined}
       data-focused={focused ? '' : undefined}
       data-index={index}
+      data-record={row.id}
+      data-record-label={String(
+        (row as Record<string, unknown>)[columns[0]?.key ?? 'id'] ?? row.id,
+      )}
+      data-record-template=""
+      data-target="row"
+      data-target-label="Row"
       onClick={() => onClick(index, row)}
       ref={measure}
       role="row"
     >
       {selectable && (
-        <div className={`${classes.cell} ${classes.selectionCell}`} onClick={(e) => e.stopPropagation()} role="gridcell">
-          <BaseCheckbox aria-label={`Select ${row.id}`} checked={selected} onChange={() => onToggle(row.id)} size="xs" />
+        <div
+          className={`${classes.cell} ${classes.selectionCell}`}
+          onClick={(e) => e.stopPropagation()}
+          role="gridcell"
+        >
+          <BaseCheckbox
+            aria-label={`Select ${row.id}`}
+            checked={selected}
+            onChange={() => onToggle(row.id)}
+            size="xs"
+          />
         </div>
       )}
       {columns.map((column) => (
-        <div className={classes.cell} data-align={column.align} key={column.key} role="gridcell">
-          {renderCell(column, (row as Record<string, unknown>)[column.key], row)}
+        <div
+          className={classes.cell}
+          data-align={column.align}
+          key={column.key}
+          role="gridcell"
+        >
+          {renderCell(
+            column,
+            (row as Record<string, unknown>)[column.key],
+            row,
+          )}
         </div>
       ))}
     </div>
@@ -177,7 +231,8 @@ export function TexoDataTable<T extends { id: string }>({
   }, [rowHeight, virtualizer]);
 
   useEffect(() => {
-    if (onEndReached && rows.length > 0 && lastRendered >= rows.length - 1) onEndReached();
+    if (onEndReached && rows.length > 0 && lastRendered >= rows.length - 1)
+      onEndReached();
   }, [lastRendered, rows.length, onEndReached]);
 
   useEffect(() => {
@@ -197,7 +252,11 @@ export function TexoDataTable<T extends { id: string }>({
   const toggle = useCallback(
     (id: string) => {
       if (!onSelectedChange) return;
-      onSelectedChange(selected.includes(id) ? selected.filter((s) => s !== id) : [...selected, id]);
+      onSelectedChange(
+        selected.includes(id)
+          ? selected.filter((s) => s !== id)
+          : [...selected, id],
+      );
     },
     [onSelectedChange, selected],
   );
@@ -230,11 +289,21 @@ export function TexoDataTable<T extends { id: string }>({
         break;
       case 'PageDown':
         event.preventDefault();
-        moveFocus(focused + Math.floor((viewportRef.current?.clientHeight ?? rowHeight * 10) / rowHeight));
+        moveFocus(
+          focused +
+            Math.floor(
+              (viewportRef.current?.clientHeight ?? rowHeight * 10) / rowHeight,
+            ),
+        );
         break;
       case 'PageUp':
         event.preventDefault();
-        moveFocus(focused - Math.floor((viewportRef.current?.clientHeight ?? rowHeight * 10) / rowHeight));
+        moveFocus(
+          focused -
+            Math.floor(
+              (viewportRef.current?.clientHeight ?? rowHeight * 10) / rowHeight,
+            ),
+        );
         break;
       case 'Enter':
         if (focused >= 0 && rows[focused] && onOpen) {
@@ -255,10 +324,15 @@ export function TexoDataTable<T extends { id: string }>({
     onSortChange?.(cycleSort(sort, key, event.shiftKey));
   };
 
-  const allSelected = rows.length > 0 && rows.every((r) => selected.includes(r.id));
+  const allSelected =
+    rows.length > 0 && rows.every((r) => selected.includes(r.id));
   const tracks = [
     ...(selectable ? [SELECTION_TRACK] : []),
-    ...columns.map((c) => (typeof c.width === 'number' ? `${c.width}px` : (c.width ?? 'minmax(160px, 1fr)'))),
+    ...columns.map((c) =>
+      typeof c.width === 'number'
+        ? `${c.width}px`
+        : (c.width ?? 'minmax(160px, 1fr)'),
+    ),
   ].join(' ');
   const style = { '--texo-data-table-columns': tracks } as CSSProperties;
 
@@ -276,14 +350,23 @@ export function TexoDataTable<T extends { id: string }>({
       tabIndex={0}
     >
       <div className={classes.viewport} ref={viewportRef}>
-        <div className={classes.header} data-sticky={config.table.stickyHeader || undefined} role="row">
+        <div
+          className={classes.header}
+          data-sticky={config.table.stickyHeader || undefined}
+          role="row"
+        >
           {selectable && (
-            <div className={`${classes.headerCell} ${classes.selectionCell}`} role="columnheader">
+            <div
+              className={`${classes.headerCell} ${classes.selectionCell}`}
+              role="columnheader"
+            >
               <BaseCheckbox
                 aria-label="Select all rows"
                 checked={allSelected}
                 indeterminate={selected.length > 0 && !allSelected}
-                onChange={() => onSelectedChange?.(allSelected ? [] : rows.map((r) => r.id))}
+                onChange={() =>
+                  onSelectedChange?.(allSelected ? [] : rows.map((r) => r.id))
+                }
                 size="xs"
               />
             </div>
@@ -293,7 +376,13 @@ export function TexoDataTable<T extends { id: string }>({
             const active = at >= 0 ? sort[at] : undefined;
             return (
               <div
-                aria-sort={active ? (active.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+                aria-sort={
+                  active
+                    ? active.direction === 'asc'
+                      ? 'ascending'
+                      : 'descending'
+                    : 'none'
+                }
                 className={classes.headerCell}
                 data-align={column.align}
                 data-sorted={active ? '' : undefined}
@@ -302,8 +391,15 @@ export function TexoDataTable<T extends { id: string }>({
                 role="columnheader"
               >
                 {column.label}
-                {active && (active.direction === 'asc' ? <IconArrowUp size={12} /> : <IconArrowDown size={12} />)}
-                {active && sort.length > 1 && <span className={classes.sortIndex}>{at + 1}</span>}
+                {active &&
+                  (active.direction === 'asc' ? (
+                    <IconArrowUp size={12} />
+                  ) : (
+                    <IconArrowDown size={12} />
+                  ))}
+                {active && sort.length > 1 && (
+                  <span className={classes.sortIndex}>{at + 1}</span>
+                )}
               </div>
             );
           })}
@@ -313,7 +409,11 @@ export function TexoDataTable<T extends { id: string }>({
             {emptyLabel}
           </BaseText>
         )}
-        <div className={classes.body} ref={virtualizer.containerRef} role="rowgroup">
+        <div
+          className={classes.body}
+          ref={virtualizer.containerRef}
+          role="rowgroup"
+        >
           {items.map((item) => (
             <TableRow
               columns={columns}

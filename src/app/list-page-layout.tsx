@@ -14,17 +14,45 @@ export function ListPageLayout({
   children: ReactNode;
 }) {
   return (
-    <section className={classes.page} aria-label={title}>
-      <BaseStack gap={4} component="header">
-        <BaseTitle order={1} size="h2">
+    <section
+      className={classes.page}
+      aria-label={title}
+      data-target="page"
+      data-target-label="Page"
+    >
+      <BaseStack
+        gap={4}
+        component="header"
+        data-target="header"
+        data-target-label="Page header"
+      >
+        <BaseTitle
+          order={1}
+          size="h2"
+          data-target="title"
+          data-target-label="Title"
+        >
           {title}
         </BaseTitle>
-        <BaseText c="dimmed" size="sm">
+        <BaseText
+          c="dimmed"
+          size="sm"
+          data-target="description"
+          data-target-label="Description"
+        >
           {description}
         </BaseText>
       </BaseStack>
-      <div>{filters}</div>
-      <div className={classes.content}>{children}</div>
+      <div data-target="filters" data-target-label="Filters">
+        {filters}
+      </div>
+      <div
+        className={classes.content}
+        data-target="content"
+        data-target-label="Content"
+      >
+        {children}
+      </div>
     </section>
   );
 }

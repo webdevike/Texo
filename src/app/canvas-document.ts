@@ -26,7 +26,7 @@ export type CanvasDocument = {
   annotations: CanvasAnnotation[];
 };
 
-function object(
+export function object(
   value: unknown,
   label: string,
 ): asserts value is Record<string, unknown> {
@@ -41,7 +41,7 @@ function object(
   }
 }
 
-function fields(
+export function fields(
   value: Record<string, unknown>,
   expected: string[],
   label: string,
@@ -54,7 +54,10 @@ function fields(
   }
 }
 
-function identifier(value: unknown, label: string): asserts value is string {
+export function identifier(
+  value: unknown,
+  label: string,
+): asserts value is string {
   if (typeof value !== 'string' || !value.trim() || value.length > 128) {
     throw new Error(
       `${label} must be a nonempty string of at most 128 characters.`,
@@ -80,7 +83,7 @@ function numberInRange(
   }
 }
 
-function point(value: unknown, min: number, max: number, label: string) {
+export function point(value: unknown, min: number, max: number, label: string) {
   object(value, label);
   fields(value, ['x', 'y'], label);
   numberInRange(value.x, min, max, `${label}.x`);
@@ -176,3 +179,9 @@ export function validateCanvasDocument(
       throw new Error('Annotation resolved must be a boolean.');
   }
 }
+
+export const canvasFile = {
+  endpoint: '/__texo/canvas',
+  label: 'project/canvas.json',
+  validate: validateCanvasDocument,
+};

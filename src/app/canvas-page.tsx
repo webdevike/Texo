@@ -40,22 +40,24 @@ import {
 } from '@texo/ui';
 
 import { AnnotationSurface, NotesPanel } from './canvas-annotations';
-import type {
-  AnnotationTarget,
-  CanvasInstance,
-  CanvasPoint,
+import {
+  canvasFile,
+  type AnnotationTarget,
+  type CanvasDocument,
+  type CanvasInstance,
+  type CanvasPoint,
 } from './canvas-document';
 import {
-  useCanvasDocument,
-  type CanvasDocumentState,
-} from './use-canvas-document';
+  useProjectDocument,
+  type ProjectDocumentState,
+} from './use-project-document';
 import '@xyflow/react/dist/style.css';
 import classes from './canvas-page.module.css';
 
 const COMPONENT_TRANSFER = 'application/x-texo-component';
 type CanvasMode = 'design' | 'annotate' | 'preview';
 type ComponentNode = FlowNode<{ instance: CanvasInstance }, 'component'>;
-type CanvasContextValue = CanvasDocumentState & {
+type CanvasContextValue = ProjectDocumentState<CanvasDocument> & {
   registry: TexoComponentRegistry;
   selectedId: string | null;
   select: Dispatch<SetStateAction<string | null>>;
@@ -90,7 +92,7 @@ export function CanvasProvider({
   registry: TexoComponentRegistry;
   children: ReactNode;
 }) {
-  const file = useCanvasDocument();
+  const file = useProjectDocument(canvasFile);
   const [selectedId, select] = useState<string | null>(null);
   const [mode, setModeState] = useState<CanvasMode>('design');
   const [selectedNoteId, selectNote] = useState<string | null>(null);

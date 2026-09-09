@@ -3,7 +3,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
-import { canvasFiles } from './tools/canvas-plugin';
+import { projectFiles } from './tools/project-files';
 
 export default defineConfig(() => ({
   root: import.meta.dirname,
@@ -20,7 +20,7 @@ export default defineConfig(() => ({
     react(),
     nxViteTsPaths(),
     nxCopyAssetsPlugin(['*.md']),
-    canvasFiles(),
+    projectFiles(),
   ],
   // Uncomment this if you are using workers.
   // worker: {

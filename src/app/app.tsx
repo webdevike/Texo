@@ -1,12 +1,14 @@
 import {
   IconArrowBackUp,
   IconArrowForwardUp,
+  IconClick,
   IconCode,
   IconCheck,
   IconChevronDown,
   IconDotsVertical,
   IconLayoutGrid,
   IconComponents,
+  IconMessageCircle,
   IconMoon,
   IconPalette,
   IconSun,
@@ -33,7 +35,13 @@ import { DashboardPage } from './dashboard-page';
 import { CustomComponentsPage } from './custom-components-page';
 import { CanvasLibrary, CanvasPage, CanvasProvider } from './canvas-entry';
 import { ThemeControls } from './theme-controls';
-import { CustomersPage } from './customers-page';
+import {
+  PagesWorkspace,
+  designedPages,
+  pageIdFromPath,
+  pagePath,
+} from './pages-workspace';
+import { PrototypePanel, PrototypeProvider, usePrototype } from './prototype';
 import { componentLibrary, projectComponents } from '../extensions/registry';
 
 const {
@@ -95,7 +103,7 @@ const componentNavigationItems = Object.entries(BaseComponents)
 const navigationItems = [
   { component: null, label: 'Theme', name: 'Theme', path: '/theme' },
   { component: null, label: 'Canvas', name: 'Canvas', path: '/canvas' },
-  { component: null, label: 'Customers', name: 'Customers', path: '/customers' },
+  { component: null, label: 'Pages', name: 'Pages', path: pagePath(designedPages[0].id) },
   { component: null, label: 'Dashboard', name: 'Dashboard', path: '/dashboard' },
   { component: null, label: 'Custom', name: 'Custom', path: '/custom' },
   ...componentNavigationItems,
@@ -325,7 +333,18 @@ function ThemePage() {
 
 export function App() {
   const { pathname } = useLocation();
+  return (
+    <PrototypeProvider page={pageIdFromPath(pathname)}>
+      <Workspace />
+    </PrototypeProvider>
+  );
+}
+
+function Workspace() {
+  const { pathname } = useLocation();
   const navigate = useNavigate();
+  const proto = usePrototype();
+  const pageId = proto.page;
   const [panelEnabled, setPanelEnabled] = useState(false);
   const [propertyTab, setPropertyTab] = useState<string | null>('colors');
   const [activeRail, setActiveRail] = useState<string | null>(
@@ -349,7 +368,7 @@ export function App() {
     navigationItems.find((item) => item.path === pathname) ??
     componentNavigationItems.find((item) => item.path === '/buttons');
   const visiblePreviews = navigationItems.filter((item) =>
-    ['/theme', '/canvas', '/customers', '/dashboard', '/custom', '/buttons', '/cards', '/text-inputs'].includes(item.path),
+    ['/theme', '/canvas', pagePath(designedPages[0].id), '/dashboard', '/custom', '/buttons', '/cards', '/text-inputs'].includes(item.path),
   );
   const hiddenPreviews = navigationItems.filter(
     (item) => !visiblePreviews.includes(item),
@@ -388,8 +407,8 @@ export function App() {
     />
   );
 
-  const actions = (
-    <BaseGroup gap="xs">
+  const themeActions = (
+    <BaseGroup gap="xs" wrap="nowrap">
       <BaseActionIcon
         aria-label="Toggle color scheme"
         variant="subtle"
@@ -424,13 +443,74 @@ export function App() {
       </BaseActionIcon>
       <BaseActionIcon
         aria-label="Toggle panel"
-        disabled={pathname === '/canvas' || pathname === '/customers'}
+        disabled={pathname === '/canvas' || pageId !== null}
         variant={panelEnabled ? 'light' : 'subtle'}
         onClick={() => setPanelEnabled((current) => !current)}
       >
         <IconCode size={16} />
       </BaseActionIcon>
     </BaseGroup>
+  );
+
+  const pageTabs = (
+    <BaseTabs
+      value={pageId}
+      onChange={(value) => value && navigate(pagePath(value))}
+      styles={compactPillTabs}
+      variant="pills"
+    >
+      <BaseTabs.List aria-label="Designed pages">
+        {designedPages.map((page) => (
+          <BaseTabs.Tab key={page.id} value={page.id}>
+            {page.label}
+          </BaseTabs.Tab>
+        ))}
+      </BaseTabs.List>
+    </BaseTabs>
+  );
+
+  const actions = pageId ? (
+    <BaseGroup gap="md" justify="space-between" style={{ flex: 1 }} wrap="nowrap">
+      {pageTabs}
+      {themeActions}
+    </BaseGroup>
+  ) : (
+    themeActions
+  );
+
+  const pageToolbar = (
+    <>
+      <BaseText c={proto.error ? 'red' : 'dimmed'} size="xs" truncate>
+        {proto.error
+          ? proto.error
+          : proto.active
+            ? 'Hover an element, then click it to describe what it should do.'
+            : 'Preview. The page works as built.'}
+      </BaseText>
+      <BaseGroup gap="xs" wrap="nowrap">
+        {proto.conflict ? (
+          <BaseButton onClick={() => void proto.reload()} size="compact-sm" variant="default">
+            Reload requests
+          </BaseButton>
+        ) : proto.dirty ? (
+          <BaseButton loading={proto.busy} onClick={() => void proto.save()} size="compact-sm">
+            Save requests
+          </BaseButton>
+        ) : null}
+        <BaseButton
+          aria-pressed={proto.active}
+          leftSection={<IconClick size={14} />}
+          onClick={() => {
+            proto.setActive(!proto.active);
+            if (!proto.active) setActiveRail('prototype');
+          }}
+          size="compact-sm"
+          variant={proto.active ? 'light' : 'default'}
+        >
+          Prototype
+        </BaseButton>
+      </BaseGroup>
+    </>
   );
 
   const inspectorTabs = (
@@ -588,6 +668,22 @@ export function App() {
       id: 'pages',
       label: 'Pages',
     },
+    {
+      body: <PrototypePanel />,
+      header: (
+        <BaseText fw={600} px="sm" size="sm">
+          Requests
+        </BaseText>
+      ),
+      icon: <IconMessageCircle size={18} />,
+      id: 'prototype',
+      label: 'Requests',
+      subheader: (
+        <BaseText c="dimmed" size="xs">
+          Described interactions, not built ones
+        </BaseText>
+      ),
+    },
   ];
 
   return (
@@ -599,14 +695,14 @@ export function App() {
         setActiveRail(id);
         if (id === 'library' && pathname !== '/canvas') navigate('/canvas');
       }}
-      previewTabs={previewTabs}
+      previewTabs={pageId ? pageToolbar : previewTabs}
       rail={rail}
     >
       <Routes>
         <Route path="/" element={<Navigate to="/theme" replace />} />
         <Route path="/theme" element={<ThemePage />} />
         <Route path="/canvas" element={<CanvasPage />} />
-        <Route path="/customers" element={<CustomersPage />} />
+        <Route path="/pages/:pageId" element={<PagesWorkspace />} />
         <Route path="/cards" element={<CardsPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/dashboard/attio" element={<AttioDashboardPage />} />
@@ -629,7 +725,7 @@ export function App() {
       <TexoPanel
         gutter={0}
         onClose={() => setPanelEnabled(false)}
-        opened={panelEnabled && pathname !== '/canvas' && pathname !== '/customers'}
+        opened={panelEnabled && pathname !== '/canvas' && pageId === null}
         title={`${selectedItem?.label ?? 'Component'} code`}
       >
         <BaseCodeHighlight
