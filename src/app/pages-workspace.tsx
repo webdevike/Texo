@@ -1,16 +1,35 @@
-import type { ReactNode } from 'react';
+import { createElement, type ComponentType } from 'react';
 import { Navigate, useParams } from 'react-router-dom';
 
-import { CustomersPage } from './customers-page';
 import { PrototypeSurface } from './prototype';
 import classes from './pages-workspace.module.css';
 
-/** Designed pages shown as tabs in the pages workspace. */
-export const designedPages: readonly {
-  id: string;
-  label: string;
-  element: ReactNode;
-}[] = [{ id: 'customers', label: 'Customers', element: <CustomersPage /> }];
+/**
+ * Designed pages live in src/pages/<id>.tsx. Each module exports
+ * `page = { id, label }` and a default component; Vite's glob picks new files
+ * up live, which is how an agent-written page appears as a tab.
+ */
+type PageModule = {
+  page?: { id: string; label: string };
+  default?: ComponentType;
+};
+
+const modules = import.meta.glob<PageModule>('../pages/*.tsx', { eager: true });
+
+export const designedPages = Object.entries(modules)
+  .flatMap(([path, module]) => {
+    const id = module.page?.id ?? path.replace(/^.*\/([^/]+)\.tsx$/, '$1');
+    if (!module.default) return [];
+    return [
+      {
+        id,
+        label: module.page?.label ?? id,
+        component: module.default,
+        path,
+      },
+    ];
+  })
+  .sort((a, b) => a.label.localeCompare(b.label));
 
 export const pagePath = (id: string) => `/pages/${id}`;
 
@@ -24,10 +43,18 @@ export function pageIdFromPath(pathname: string) {
 export function PagesWorkspace() {
   const { pageId } = useParams();
   const page = designedPages.find((item) => item.id === pageId);
-  if (!page) return <Navigate to={pagePath(designedPages[0].id)} replace />;
+  if (!page) {
+    return designedPages.length ? (
+      <Navigate to={pagePath(designedPages[0].id)} replace />
+    ) : (
+      <div className={classes.frame} />
+    );
+  }
   return (
     <div className={classes.frame}>
-      <PrototypeSurface page={page.id}>{page.element}</PrototypeSurface>
+      <PrototypeSurface page={page.id}>
+        {createElement(page.component)}
+      </PrototypeSurface>
     </div>
   );
 }

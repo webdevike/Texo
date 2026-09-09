@@ -12,8 +12,10 @@ import {
   TexoDataTable,
   type TexoDataTableColumn,
 } from '@texo/ui';
-import { ListPageLayout } from './list-page-layout';
-import classes from './list-page-layout.module.css';
+import { ListPageLayout } from '../app/list-page-layout';
+import classes from '../app/list-page-layout.module.css';
+
+export const page = { id: 'customers', label: 'Customers' };
 
 type Customer = {
   id: string;
@@ -168,7 +170,7 @@ function Status({ value }: { value: Customer['status'] }) {
   );
 }
 
-export function CustomersPage() {
+export default function CustomersPage() {
   const [filter, setFilter] =
     useState<(typeof filters)[number]>('All customers');
   const [search, setSearch] = useState('');

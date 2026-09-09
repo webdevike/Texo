@@ -8,6 +8,7 @@ import {
   IconDotsVertical,
   IconLayoutGrid,
   IconComponents,
+  IconMessage,
   IconMessageCircle,
   IconMoon,
   IconPalette,
@@ -17,6 +18,7 @@ import * as BaseComponents from '@texo/ui';
 import {
   createElement,
   useEffect,
+  useRef,
   useState,
   type ComponentType,
   type PropsWithChildren,
@@ -42,6 +44,8 @@ import {
   pagePath,
 } from './pages-workspace';
 import { PrototypePanel, PrototypeProvider, usePrototype } from './prototype';
+import { ChatHeader, ChatPanel, ChatSubheader } from './chat-panel';
+import { ChatProvider } from './use-chat';
 import { componentLibrary, projectComponents } from '../extensions/registry';
 
 const {
@@ -103,8 +107,13 @@ const componentNavigationItems = Object.entries(BaseComponents)
 const navigationItems = [
   { component: null, label: 'Theme', name: 'Theme', path: '/theme' },
   { component: null, label: 'Canvas', name: 'Canvas', path: '/canvas' },
-  { component: null, label: 'Pages', name: 'Pages', path: pagePath(designedPages[0].id) },
-  { component: null, label: 'Dashboard', name: 'Dashboard', path: '/dashboard' },
+  { component: null, label: 'Pages', name: 'Pages', path: '/pages' },
+  {
+    component: null,
+    label: 'Dashboard',
+    name: 'Dashboard',
+    path: '/dashboard',
+  },
   { component: null, label: 'Custom', name: 'Custom', path: '/custom' },
   ...componentNavigationItems,
 ];
@@ -292,12 +301,18 @@ function ComponentPreview({
       return <BaseTree data={treeData} />;
     default: {
       // Input-like aliases render a void <input>; children would crash React.
-      const inputLike = /Input|Select|Textarea|Checkbox|Switch|Slider|Radio|Picker|Rating|Combobox/.test(name);
+      const inputLike =
+        /Input|Select|Textarea|Checkbox|Switch|Slider|Radio|Picker|Rating|Combobox/.test(
+          name,
+        );
       if (inputLike) {
-        return createElement(component as ComponentType<{ label?: string; placeholder?: string }>, {
-          label: formatComponentName(name),
-          placeholder: formatComponentName(name),
-        });
+        return createElement(
+          component as ComponentType<{ label?: string; placeholder?: string }>,
+          {
+            label: formatComponentName(name),
+            placeholder: formatComponentName(name),
+          },
+        );
       }
       return createElement(
         component as ComponentType<PropsWithChildren>,
@@ -335,7 +350,9 @@ export function App() {
   const { pathname } = useLocation();
   return (
     <PrototypeProvider page={pageIdFromPath(pathname)}>
-      <Workspace />
+      <ChatProvider>
+        <Workspace />
+      </ChatProvider>
     </PrototypeProvider>
   );
 }
@@ -348,11 +365,24 @@ function Workspace() {
   const [panelEnabled, setPanelEnabled] = useState(false);
   const [propertyTab, setPropertyTab] = useState<string | null>('colors');
   const [activeRail, setActiveRail] = useState<string | null>(
-    pathname === '/canvas' ? 'library' : 'theme',
+    pathname === '/canvas'
+      ? 'library'
+      : pathname.startsWith('/pages')
+        ? 'chat'
+        : 'theme',
   );
   useEffect(() => {
     if (pathname === '/canvas') setActiveRail('library');
   }, [pathname]);
+  // A page the agent just wrote appears through the pages glob; show it.
+  const knownPages = useRef(designedPages.map((page) => page.id).join(','));
+  useEffect(() => {
+    const ids = designedPages.map((page) => page.id);
+    const previous = knownPages.current.split(',').filter(Boolean);
+    knownPages.current = ids.join(',');
+    const added = ids.find((id) => !previous.includes(id));
+    if (added && pathname.startsWith('/pages')) navigate(pagePath(added));
+  });
   const {
     applyPreset,
     canRedo,
@@ -368,7 +398,16 @@ function Workspace() {
     navigationItems.find((item) => item.path === pathname) ??
     componentNavigationItems.find((item) => item.path === '/buttons');
   const visiblePreviews = navigationItems.filter((item) =>
-    ['/theme', '/canvas', pagePath(designedPages[0].id), '/dashboard', '/custom', '/buttons', '/cards', '/text-inputs'].includes(item.path),
+    [
+      '/theme',
+      '/canvas',
+      '/pages',
+      '/dashboard',
+      '/custom',
+      '/buttons',
+      '/cards',
+      '/text-inputs',
+    ].includes(item.path),
   );
   const hiddenPreviews = navigationItems.filter(
     (item) => !visiblePreviews.includes(item),
@@ -390,7 +429,6 @@ function Workspace() {
   };
 
   const themeSettings = <ThemeControls tab={propertyTab} />;
-
 
   const themePickerOptions = [
     ...(preset === 'custom'
@@ -470,7 +508,12 @@ function Workspace() {
   );
 
   const actions = pageId ? (
-    <BaseGroup gap="md" justify="space-between" style={{ flex: 1 }} wrap="nowrap">
+    <BaseGroup
+      gap="md"
+      justify="space-between"
+      style={{ flex: 1 }}
+      wrap="nowrap"
+    >
       {pageTabs}
       {themeActions}
     </BaseGroup>
@@ -489,11 +532,19 @@ function Workspace() {
       </BaseText>
       <BaseGroup gap="xs" wrap="nowrap">
         {proto.conflict ? (
-          <BaseButton onClick={() => void proto.reload()} size="compact-sm" variant="default">
+          <BaseButton
+            onClick={() => void proto.reload()}
+            size="compact-sm"
+            variant="default"
+          >
             Reload requests
           </BaseButton>
         ) : proto.dirty ? (
-          <BaseButton loading={proto.busy} onClick={() => void proto.save()} size="compact-sm">
+          <BaseButton
+            loading={proto.busy}
+            onClick={() => void proto.save()}
+            size="compact-sm"
+          >
             Save requests
           </BaseButton>
         ) : null}
@@ -548,20 +599,30 @@ function Workspace() {
                     <BaseButton
                       rightSection={<IconChevronDown size={12} />}
                       size="compact-xs"
-                      variant={pathname.startsWith('/dashboard') ? 'light' : 'subtle'}
+                      variant={
+                        pathname.startsWith('/dashboard') ? 'light' : 'subtle'
+                      }
                     >
                       Dashboard
                     </BaseButton>
                   </BaseMenu.Target>
                   <BaseMenu.Dropdown>
                     <BaseMenu.Item
-                      leftSection={pathname === '/dashboard' ? <IconCheck size={14} /> : undefined}
+                      leftSection={
+                        pathname === '/dashboard' ? (
+                          <IconCheck size={14} />
+                        ) : undefined
+                      }
                       onClick={() => navigate('/dashboard')}
                     >
                       Default
                     </BaseMenu.Item>
                     <BaseMenu.Item
-                      leftSection={pathname === '/dashboard/attio' ? <IconCheck size={14} /> : undefined}
+                      leftSection={
+                        pathname === '/dashboard/attio' ? (
+                          <IconCheck size={14} />
+                        ) : undefined
+                      }
                       onClick={() => {
                         applyPreset('attio');
                         navigate('/dashboard/attio');
@@ -577,14 +638,20 @@ function Workspace() {
                     <BaseButton
                       rightSection={<IconChevronDown size={12} />}
                       size="compact-xs"
-                      variant={pathname.startsWith('/custom') ? 'light' : 'subtle'}
+                      variant={
+                        pathname.startsWith('/custom') ? 'light' : 'subtle'
+                      }
                     >
                       Custom
                     </BaseButton>
                   </BaseMenu.Target>
                   <BaseMenu.Dropdown>
                     <BaseMenu.Item
-                      leftSection={pathname === '/custom' ? <IconCheck size={14} /> : undefined}
+                      leftSection={
+                        pathname === '/custom' ? (
+                          <IconCheck size={14} />
+                        ) : undefined
+                      }
                       onClick={() => navigate('/custom')}
                     >
                       All
@@ -592,7 +659,11 @@ function Workspace() {
                     {Object.values(projectComponents).map((component) => (
                       <BaseMenu.Item
                         key={component.id}
-                        leftSection={pathname === `/custom/${component.id}` ? <IconCheck size={14} /> : undefined}
+                        leftSection={
+                          pathname === `/custom/${component.id}` ? (
+                            <IconCheck size={14} />
+                          ) : undefined
+                        }
                         onClick={() => navigate(`/custom/${component.id}`)}
                       >
                         {component.name}
@@ -642,12 +713,28 @@ function Workspace() {
 
   const rail = [
     {
+      body: <ChatPanel />,
+      header: <ChatHeader />,
+      icon: <IconMessage size={18} />,
+      id: 'chat',
+      label: 'Chat',
+      subheader: <ChatSubheader />,
+    },
+    {
       body: <CanvasLibrary />,
-      header: <BaseText fw={600} px="sm" size="sm">Components</BaseText>,
+      header: (
+        <BaseText fw={600} px="sm" size="sm">
+          Components
+        </BaseText>
+      ),
       icon: <IconComponents size={18} />,
       id: 'library',
       label: 'Components',
-      subheader: <BaseText c="dimmed" size="xs">Drag or add to canvas</BaseText>,
+      subheader: (
+        <BaseText c="dimmed" size="xs">
+          Drag or add to canvas
+        </BaseText>
+      ),
     },
     {
       body: themeSettings,
@@ -688,52 +775,56 @@ function Workspace() {
 
   return (
     <CanvasProvider registry={componentLibrary}>
-    <TexoAppShell
-      actions={actions}
-      activeRail={activeRail}
-      onRailChange={(id) => {
-        setActiveRail(id);
-        if (id === 'library' && pathname !== '/canvas') navigate('/canvas');
-      }}
-      previewTabs={pageId ? pageToolbar : previewTabs}
-      rail={rail}
-    >
-      <Routes>
-        <Route path="/" element={<Navigate to="/theme" replace />} />
-        <Route path="/theme" element={<ThemePage />} />
-        <Route path="/canvas" element={<CanvasPage />} />
-        <Route path="/pages/:pageId" element={<PagesWorkspace />} />
-        <Route path="/cards" element={<CardsPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/dashboard/attio" element={<AttioDashboardPage />} />
-        <Route path="/custom" element={<CustomComponentsPage />} />
-        <Route path="/custom/:componentId" element={<CustomComponentsPage />} />
-        {componentNavigationItems
-          .filter((item) => item.path !== '/cards')
-          .map((item) => (
-            <Route
-              key={item.path}
-              path={item.path}
-              element={
-                <ComponentPage component={item.component} name={item.name} />
-              }
-            />
-          ))}
-        <Route path="*" element={<Navigate to="/theme" replace />} />
-      </Routes>
-
-      <TexoPanel
-        gutter={0}
-        onClose={() => setPanelEnabled(false)}
-        opened={panelEnabled && pathname !== '/canvas' && pageId === null}
-        title={`${selectedItem?.label ?? 'Component'} code`}
+      <TexoAppShell
+        actions={actions}
+        activeRail={activeRail}
+        onRailChange={(id) => {
+          setActiveRail(id);
+          if (id === 'library' && pathname !== '/canvas') navigate('/canvas');
+        }}
+        previewTabs={pageId ? pageToolbar : previewTabs}
+        rail={rail}
       >
-        <BaseCodeHighlight
-          code={previewCode(selectedItem?.name ?? 'BaseButton')}
-          language="tsx"
-        />
-      </TexoPanel>
-    </TexoAppShell>
+        <Routes>
+          <Route path="/" element={<Navigate to="/theme" replace />} />
+          <Route path="/theme" element={<ThemePage />} />
+          <Route path="/canvas" element={<CanvasPage />} />
+          <Route path="/pages" element={<PagesWorkspace />} />
+          <Route path="/pages/:pageId" element={<PagesWorkspace />} />
+          <Route path="/cards" element={<CardsPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/dashboard/attio" element={<AttioDashboardPage />} />
+          <Route path="/custom" element={<CustomComponentsPage />} />
+          <Route
+            path="/custom/:componentId"
+            element={<CustomComponentsPage />}
+          />
+          {componentNavigationItems
+            .filter((item) => item.path !== '/cards')
+            .map((item) => (
+              <Route
+                key={item.path}
+                path={item.path}
+                element={
+                  <ComponentPage component={item.component} name={item.name} />
+                }
+              />
+            ))}
+          <Route path="*" element={<Navigate to="/theme" replace />} />
+        </Routes>
+
+        <TexoPanel
+          gutter={0}
+          onClose={() => setPanelEnabled(false)}
+          opened={panelEnabled && pathname !== '/canvas' && pageId === null}
+          title={`${selectedItem?.label ?? 'Component'} code`}
+        >
+          <BaseCodeHighlight
+            code={previewCode(selectedItem?.name ?? 'BaseButton')}
+            language="tsx"
+          />
+        </TexoPanel>
+      </TexoAppShell>
     </CanvasProvider>
   );
 }

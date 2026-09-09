@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
 import { projectFiles } from './tools/project-files';
+import { chatThreads } from './tools/chat-plugin';
 
 export default defineConfig(() => ({
   root: import.meta.dirname,
@@ -21,6 +22,7 @@ export default defineConfig(() => ({
     nxViteTsPaths(),
     nxCopyAssetsPlugin(['*.md']),
     projectFiles(),
+    chatThreads(),
   ],
   // Uncomment this if you are using workers.
   // worker: {
