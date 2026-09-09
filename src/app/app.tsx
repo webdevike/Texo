@@ -33,6 +33,7 @@ import { DashboardPage } from './dashboard-page';
 import { CustomComponentsPage } from './custom-components-page';
 import { CanvasLibrary, CanvasPage, CanvasProvider } from './canvas-entry';
 import { ThemeControls } from './theme-controls';
+import { CustomersPage } from './customers-page';
 import { componentLibrary, projectComponents } from '../extensions/registry';
 
 const {
@@ -94,6 +95,7 @@ const componentNavigationItems = Object.entries(BaseComponents)
 const navigationItems = [
   { component: null, label: 'Theme', name: 'Theme', path: '/theme' },
   { component: null, label: 'Canvas', name: 'Canvas', path: '/canvas' },
+  { component: null, label: 'Customers', name: 'Customers', path: '/customers' },
   { component: null, label: 'Dashboard', name: 'Dashboard', path: '/dashboard' },
   { component: null, label: 'Custom', name: 'Custom', path: '/custom' },
   ...componentNavigationItems,
@@ -347,7 +349,7 @@ export function App() {
     navigationItems.find((item) => item.path === pathname) ??
     componentNavigationItems.find((item) => item.path === '/buttons');
   const visiblePreviews = navigationItems.filter((item) =>
-    ['/theme', '/canvas', '/dashboard', '/custom', '/buttons', '/cards', '/text-inputs'].includes(item.path),
+    ['/theme', '/canvas', '/customers', '/dashboard', '/custom', '/buttons', '/cards', '/text-inputs'].includes(item.path),
   );
   const hiddenPreviews = navigationItems.filter(
     (item) => !visiblePreviews.includes(item),
@@ -422,7 +424,7 @@ export function App() {
       </BaseActionIcon>
       <BaseActionIcon
         aria-label="Toggle panel"
-        disabled={pathname === '/canvas'}
+        disabled={pathname === '/canvas' || pathname === '/customers'}
         variant={panelEnabled ? 'light' : 'subtle'}
         onClick={() => setPanelEnabled((current) => !current)}
       >
@@ -604,6 +606,7 @@ export function App() {
         <Route path="/" element={<Navigate to="/theme" replace />} />
         <Route path="/theme" element={<ThemePage />} />
         <Route path="/canvas" element={<CanvasPage />} />
+        <Route path="/customers" element={<CustomersPage />} />
         <Route path="/cards" element={<CardsPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/dashboard/attio" element={<AttioDashboardPage />} />
@@ -626,7 +629,7 @@ export function App() {
       <TexoPanel
         gutter={0}
         onClose={() => setPanelEnabled(false)}
-        opened={panelEnabled && pathname !== '/canvas'}
+        opened={panelEnabled && pathname !== '/canvas' && pathname !== '/customers'}
         title={`${selectedItem?.label ?? 'Component'} code`}
       >
         <BaseCodeHighlight
