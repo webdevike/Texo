@@ -37,12 +37,13 @@ import { DashboardPage } from './dashboard-page';
 import { CustomComponentsPage } from './custom-components-page';
 import { CanvasLibrary, CanvasPage, CanvasProvider } from './canvas-entry';
 import { ThemeControls } from './theme-controls';
+import { PagesWorkspace } from './pages-workspace';
 import {
-  PagesWorkspace,
-  designedPages,
+  PreviewProvider,
   pageIdFromPath,
   pagePath,
-} from './pages-workspace';
+  usePreview,
+} from './preview';
 import { PrototypePanel, PrototypeProvider, usePrototype } from './prototype';
 import { ChatHeader, ChatPanel, ChatSubheader } from './chat-panel';
 import { ChatProvider } from './use-chat';
@@ -350,9 +351,11 @@ export function App() {
   const { pathname } = useLocation();
   return (
     <PrototypeProvider page={pageIdFromPath(pathname)}>
-      <ChatProvider>
-        <Workspace />
-      </ChatProvider>
+      <PreviewProvider>
+        <ChatProvider>
+          <Workspace />
+        </ChatProvider>
+      </PreviewProvider>
     </PrototypeProvider>
   );
 }
@@ -361,7 +364,9 @@ function Workspace() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const proto = usePrototype();
+  const preview = usePreview();
   const pageId = proto.page;
+  const onPages = pathname.startsWith('/pages');
   const [panelEnabled, setPanelEnabled] = useState(false);
   const [propertyTab, setPropertyTab] = useState<string | null>('colors');
   const [activeRail, setActiveRail] = useState<string | null>(
@@ -374,15 +379,6 @@ function Workspace() {
   useEffect(() => {
     if (pathname === '/canvas') setActiveRail('library');
   }, [pathname]);
-  // A page the agent just wrote appears through the pages glob; show it.
-  const knownPages = useRef(designedPages.map((page) => page.id).join(','));
-  useEffect(() => {
-    const ids = designedPages.map((page) => page.id);
-    const previous = knownPages.current.split(',').filter(Boolean);
-    knownPages.current = ids.join(',');
-    const added = ids.find((id) => !previous.includes(id));
-    if (added && pathname.startsWith('/pages')) navigate(pagePath(added));
-  });
   const {
     applyPreset,
     canRedo,
@@ -481,7 +477,7 @@ function Workspace() {
       </BaseActionIcon>
       <BaseActionIcon
         aria-label="Toggle panel"
-        disabled={pathname === '/canvas' || pageId !== null}
+        disabled={pathname === '/canvas' || onPages}
         variant={panelEnabled ? 'light' : 'subtle'}
         onClick={() => setPanelEnabled((current) => !current)}
       >
@@ -498,7 +494,7 @@ function Workspace() {
       variant="pills"
     >
       <BaseTabs.List aria-label="Designed pages">
-        {designedPages.map((page) => (
+        {preview.pages.map((page) => (
           <BaseTabs.Tab key={page.id} value={page.id}>
             {page.label}
           </BaseTabs.Tab>
@@ -507,7 +503,7 @@ function Workspace() {
     </BaseTabs>
   );
 
-  const actions = pageId ? (
+  const actions = onPages ? (
     <BaseGroup
       gap="md"
       justify="space-between"
@@ -782,7 +778,7 @@ function Workspace() {
           setActiveRail(id);
           if (id === 'library' && pathname !== '/canvas') navigate('/canvas');
         }}
-        previewTabs={pageId ? pageToolbar : previewTabs}
+        previewTabs={onPages ? pageToolbar : previewTabs}
         rail={rail}
       >
         <Routes>
@@ -816,7 +812,7 @@ function Workspace() {
         <TexoPanel
           gutter={0}
           onClose={() => setPanelEnabled(false)}
-          opened={panelEnabled && pathname !== '/canvas' && pageId === null}
+          opened={panelEnabled && pathname !== '/canvas' && !onPages}
           title={`${selectedItem?.label ?? 'Component'} code`}
         >
           <BaseCodeHighlight

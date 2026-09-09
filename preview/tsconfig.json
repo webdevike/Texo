@@ -1,0 +1,12 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "noEmit": true,
+    "allowJs": false,
+    "allowSyntheticDefaultImports": true,
+    "lib": ["es2022", "dom"],
+    "types": ["@nx/react/typings/cssmodule.d.ts", "vite/client"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
+}

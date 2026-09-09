@@ -5,6 +5,7 @@ import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
 import { projectFiles } from './tools/project-files';
 import { chatThreads } from './tools/chat-plugin';
+import { previewApp } from './tools/preview-plugin';
 
 export default defineConfig(() => ({
   root: import.meta.dirname,
@@ -23,6 +24,7 @@ export default defineConfig(() => ({
     nxCopyAssetsPlugin(['*.md']),
     projectFiles(),
     chatThreads(),
+    previewApp(),
   ],
   // Uncomment this if you are using workers.
   // worker: {

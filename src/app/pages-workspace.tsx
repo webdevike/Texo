@@ -1,60 +1,25 @@
-import { createElement, type ComponentType } from 'react';
-import { Navigate, useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 
+import { previewUrl, usePreview } from './preview';
 import { PrototypeSurface } from './prototype';
 import classes from './pages-workspace.module.css';
 
-/**
- * Designed pages live in src/pages/<id>.tsx. Each module exports
- * `page = { id, label }` and a default component; Vite's glob picks new files
- * up live, which is how an agent-written page appears as a tab.
- */
-type PageModule = {
-  page?: { id: string; label: string };
-  default?: ComponentType;
-};
-
-const modules = import.meta.glob<PageModule>('../pages/*.tsx', { eager: true });
-
-export const designedPages = Object.entries(modules)
-  .flatMap(([path, module]) => {
-    const id = module.page?.id ?? path.replace(/^.*\/([^/]+)\.tsx$/, '$1');
-    if (!module.default) return [];
-    return [
-      {
-        id,
-        label: module.page?.label ?? id,
-        component: module.default,
-        path,
-      },
-    ];
-  })
-  .sort((a, b) => a.label.localeCompare(b.label));
-
-export const pagePath = (id: string) => `/pages/${id}`;
-
-export function pageIdFromPath(pathname: string) {
-  const match = /^\/pages\/([^/]+)$/.exec(pathname);
-  const id = match?.[1];
-  return id && designedPages.some((page) => page.id === id) ? id : null;
-}
-
-/** The inset, real render of one designed page. */
+/** The inset frame showing the consumer app's page for this route. */
 export function PagesWorkspace() {
-  const { pageId } = useParams();
-  const page = designedPages.find((item) => item.id === pageId);
-  if (!page) {
-    return designedPages.length ? (
-      <Navigate to={pagePath(designedPages[0].id)} replace />
-    ) : (
-      <div className={classes.frame} />
-    );
-  }
+  const { pageId = null } = useParams();
+  const { framePage, setFrame, show } = usePreview();
+  const [src] = useState(() => previewUrl(pageId));
+
+  // Admin route changed (tab click): steer the frame without reloading it.
+  useEffect(() => {
+    if (pageId && framePage && framePage !== pageId) show(pageId);
+  }, [pageId, framePage, show]);
+
+  // The frame keeps its own history once mounted; src only matters on first load.
   return (
     <div className={classes.frame}>
-      <PrototypeSurface page={page.id}>
-        {createElement(page.component)}
-      </PrototypeSurface>
+      <PrototypeSurface onFrame={setFrame} page={pageId} src={src} />
     </div>
   );
 }

@@ -204,12 +204,19 @@ function subject(
     : comment.targetLabel;
 }
 
+/**
+ * Overlay on the preview frame. Same-origin, so the frame's DOM is read
+ * directly: hits and pins are measured in the frame's viewport, which is the
+ * overlay's own box.
+ */
 export function PrototypeSurface({
   page,
-  children,
+  src,
+  onFrame,
 }: {
-  page: string;
-  children: ReactNode;
+  page: string | null;
+  src: string;
+  onFrame: (frame: HTMLIFrameElement | null) => void;
 }) {
   const proto = usePrototype();
   const { active, focusedId, focus, setVisibleIds } = proto;
@@ -218,7 +225,8 @@ export function PrototypeSurface({
     [proto.document, page],
   );
   const rootRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  const [loads, setLoads] = useState(0);
   const [hover, setHover] = useState<{
     hit: Hit;
     box: Point & { width: number; height: number };
@@ -226,6 +234,7 @@ export function PrototypeSurface({
   const [draft, setDraft] = useState<Draft | null>(null);
   const [pins, setPins] = useState<Record<string, Point>>({});
   const [rootWidth, setRootWidth] = useState(0);
+  const content = () => frameRef.current?.contentDocument?.body ?? null;
 
   useEffect(() => {
     if (!active) {
@@ -234,67 +243,89 @@ export function PrototypeSurface({
     }
   }, [active]);
 
+  // The frame is inert while Prototype is on so clicks target, not act.
+  useEffect(() => {
+    const body = content();
+    if (!body) return;
+    body.inert = active;
+    return () => {
+      body.inert = false;
+    };
+  }, [active, loads]);
+
   useLayoutEffect(() => {
     const root = rootRef.current;
-    const content = contentRef.current;
-    if (!root || !content || !active) {
+    const frame = frameRef.current;
+    const body = content();
+    const view = frame?.contentWindow;
+    if (!root || !frame || !body || !view || !active) {
       setVisibleIds([]);
       return;
     }
-    let frame = 0;
+    let handle = 0;
     function measure() {
-      if (!root || !content) return;
-      const rootRect = root.getBoundingClientRect();
+      if (!root || !body) return;
       const next: Record<string, Point> = {};
       for (const comment of comments) {
-        const rect = resolve(content, comment)?.getBoundingClientRect();
+        const rect = resolve(body, comment)?.getBoundingClientRect();
         if (!rect || !rect.width || !rect.height) continue;
         next[comment.id] = {
-          x: rect.left - rootRect.left + rect.width * comment.anchor.x,
-          y: rect.top - rootRect.top + rect.height * comment.anchor.y,
+          x: rect.left + rect.width * comment.anchor.x,
+          y: rect.top + rect.height * comment.anchor.y,
         };
       }
       setPins(next);
-      setRootWidth(rootRect.width);
+      setRootWidth(root.getBoundingClientRect().width);
       setVisibleIds(Object.keys(next));
     }
     function schedule() {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(measure);
+      cancelAnimationFrame(handle);
+      handle = requestAnimationFrame(measure);
     }
     const resize = new ResizeObserver(schedule);
     resize.observe(root);
-    resize.observe(content);
+    resize.observe(body);
     const mutations = new MutationObserver(schedule);
-    mutations.observe(content, {
+    mutations.observe(body, {
       attributes: true,
       childList: true,
       subtree: true,
       characterData: true,
     });
+    view.addEventListener('scroll', schedule, true);
+    view.addEventListener('resize', schedule);
     measure();
     return () => {
-      cancelAnimationFrame(frame);
+      cancelAnimationFrame(handle);
       resize.disconnect();
       mutations.disconnect();
+      view.removeEventListener('scroll', schedule, true);
+      view.removeEventListener('resize', schedule);
     };
-  }, [active, comments, setVisibleIds]);
+  }, [active, comments, loads, setVisibleIds]);
+
+  /** Overlay pointer position expressed in the frame's viewport. */
+  function framePoint(event: { clientX: number; clientY: number }) {
+    const rootRect = rootRef.current?.getBoundingClientRect();
+    return rootRect
+      ? { x: event.clientX - rootRect.left, y: event.clientY - rootRect.top }
+      : null;
+  }
 
   function movePointer(event: PointerEvent<HTMLButtonElement>) {
-    const root = rootRef.current;
-    const content = contentRef.current;
-    if (!root || !content) return;
-    const hit = hitTest(content, event.clientX, event.clientY);
+    const body = content();
+    const point = framePoint(event);
+    if (!body || !point) return;
+    const hit = hitTest(body, point.x, point.y);
     if (!hit) {
       setHover(null);
       return;
     }
-    const rootRect = root.getBoundingClientRect();
     setHover({
       hit,
       box: {
-        x: hit.rect.left - rootRect.left,
-        y: hit.rect.top - rootRect.top,
+        x: hit.rect.left,
+        y: hit.rect.top,
         width: hit.rect.width,
         height: hit.rect.height,
       },
@@ -318,9 +349,16 @@ export function PrototypeSurface({
       data-prototype-active={active || undefined}
       ref={rootRef}
     >
-      <div className={classes.content} inert={active} ref={contentRef}>
-        {children}
-      </div>
+      <iframe
+        className={classes.frame}
+        onLoad={() => setLoads((count) => count + 1)}
+        ref={(element) => {
+          frameRef.current = element;
+          onFrame(element);
+        }}
+        src={src}
+        title="Page preview"
+      />
       {active && (
         <>
           <button
@@ -328,6 +366,12 @@ export function PrototypeSurface({
             className={classes.capture}
             onPointerMove={movePointer}
             onPointerLeave={() => setHover(null)}
+            onWheel={(event) => {
+              frameRef.current?.contentWindow?.scrollBy(
+                event.deltaX,
+                event.deltaY,
+              );
+            }}
             onKeyDown={(event) => {
               if (event.key === 'Escape') {
                 setDraft(null);
@@ -335,33 +379,29 @@ export function PrototypeSurface({
               }
             }}
             onClick={(event) => {
-              const root = rootRef.current;
-              const content = contentRef.current;
-              if (!root || !content || event.detail === 0) return;
-              const hit = hitTest(content, event.clientX, event.clientY);
+              const body = content();
+              const point = framePoint(event);
+              if (!body || !point || !page || event.detail === 0) return;
+              const hit = hitTest(body, point.x, point.y);
               focus(null);
               if (!hit) {
                 setDraft(null);
                 return;
               }
-              const rootRect = root.getBoundingClientRect();
               const { element: _element, rect, ...described } = hit;
               setDraft({
                 hit: described,
                 anchor: {
                   x: Math.max(
                     0,
-                    Math.min(1, (event.clientX - rect.left) / rect.width),
+                    Math.min(1, (point.x - rect.left) / rect.width),
                   ),
                   y: Math.max(
                     0,
-                    Math.min(1, (event.clientY - rect.top) / rect.height),
+                    Math.min(1, (point.y - rect.top) / rect.height),
                   ),
                 },
-                point: {
-                  x: event.clientX - rootRect.left,
-                  y: event.clientY - rootRect.top,
-                },
+                point,
               });
             }}
             type="button"
@@ -412,6 +452,7 @@ export function PrototypeSurface({
                 draft={draft}
                 onCancel={() => setDraft(null)}
                 onSubmit={(body, onlyRecord) => {
+                  if (!page) return;
                   proto.add({
                     id: crypto.randomUUID(),
                     page,

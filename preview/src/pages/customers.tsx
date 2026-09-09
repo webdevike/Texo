@@ -12,8 +12,8 @@ import {
   TexoDataTable,
   type TexoDataTableColumn,
 } from '@texo/ui';
-import { ListPageLayout } from '../app/list-page-layout';
-import classes from '../app/list-page-layout.module.css';
+import { ListPageLayout } from '../list-page-layout';
+import classes from '../list-page-layout.module.css';
 
 export const page = { id: 'customers', label: 'Customers' };
 

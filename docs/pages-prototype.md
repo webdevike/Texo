@@ -1,6 +1,6 @@
 # Pages workspace and Prototype requests
 
-Route: `/pages/:pageId` (currently `customers`). Layout follows the wireframe: icon rail,
+Route: `/pages/:pageId`. The page itself runs in the consumer app (`preview/`, its own Vite server on :4210 proxied at `/preview/`) inside a same-origin frame, so edits to pages or `packages/ui` only reload the frame. Layout follows the wireframe: icon rail,
 sidebar, page tabs in the top row, a toolbar with **Prototype** on the right, and the real
 page rendered inset below.
 
@@ -12,7 +12,7 @@ page rendered inset below.
 - A request records intent only. Nothing wires the described interaction up.
 
 ## Targets
-Pages mark elements with `data-target="key"` and `data-target-label="Label"`. Nested keys
+Pages (`preview/src/pages/*.tsx`) mark elements with `data-target="key"` and `data-target-label="Label"`. Nested keys
 join with dots (`page.content.table.row`). Repeated elements add `data-record` and
 `data-record-label`; `data-record-template` (table rows) makes the composer default to
 "every record" instead of "only this one".

@@ -1,0 +1,5 @@
+.empty {
+  padding: var(--mantine-spacing-xl);
+  color: var(--mantine-color-dimmed);
+  font-size: var(--mantine-font-size-sm);
+}
