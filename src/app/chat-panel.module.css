@@ -1,38 +1,32 @@
 .dock {
-  position: fixed;
-  right: 16px;
-  bottom: 0;
-  z-index: 150;
   display: flex;
   align-items: center;
-  gap: 4px;
-  max-width: calc(100vw - 32px);
-  padding: 4px 6px;
-  border: 1px solid var(--mantine-color-default-border);
-  border-bottom: 0;
-  border-radius: var(--mantine-radius-md) var(--mantine-radius-md) 0 0;
-  background: var(--mantine-color-body);
+  gap: 2px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .chip {
-  max-width: 200px;
+  max-width: 220px;
   padding: 3px 10px;
-  border: 1px solid transparent;
+  border: 0;
   border-radius: var(--mantine-radius-sm);
-  background: var(--mantine-color-default-hover);
-  color: inherit;
+  background: transparent;
+  color: var(--mantine-color-dimmed);
   font: inherit;
-  font-size: var(--mantine-font-size-xs);
+  font-size: var(--mantine-font-size-sm);
   cursor: pointer;
 }
 
 .chip:hover {
-  border-color: var(--mantine-color-default-border);
+  background: var(--mantine-color-default-hover);
+  color: var(--mantine-color-text);
 }
 
 .chip[aria-pressed='true'] {
-  background: var(--mantine-primary-color-light);
-  color: var(--mantine-primary-color-light-color);
+  background: var(--mantine-color-body);
+  color: var(--mantine-color-text);
+  box-shadow: var(--texo-control-shadow, var(--mantine-shadow-xs));
 }
 
 .chipLabel {
@@ -50,8 +44,7 @@
   display: flex;
   flex-direction: column;
   width: min(440px, calc(100vw - 32px));
-  height: min(640px, calc(100vh - 80px));
-  border: 1px solid var(--mantine-color-default-border);
+  height: min(640px, calc(100vh - 96px));
   border-radius: var(--mantine-radius-md);
   background: var(--mantine-color-body);
   box-shadow: var(--mantine-shadow-lg);
@@ -60,7 +53,7 @@
 
 .window[data-expanded] {
   width: min(760px, calc(100vw - 32px));
-  height: calc(100vh - 80px);
+  height: calc(100vh - 96px);
 }
 
 .windowHeader {

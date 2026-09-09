@@ -32,6 +32,8 @@ export interface TexoAppShellProps {
   onRailChange?: (id: string | null) => void;
   previewTabs: ReactNode;
   rail: TexoRailItem[];
+  /** Optional strip under the workspace card, right-aligned (agent dock). */
+  footer?: ReactNode;
 }
 
 export function TexoAppShell({
@@ -39,13 +41,16 @@ export function TexoAppShell({
   activeRail: controlledRail,
   children,
   defaultRail = null,
-  onRailChange,
+  footer,
   previewTabs,
   rail,
 }: TexoAppShellProps) {
-  const [uncontrolledRail, setUncontrolledRail] = useState<string | null>(defaultRail);
+  const [uncontrolledRail, setUncontrolledRail] = useState<string | null>(
+    defaultRail,
+  );
   const [panelWidth, setPanelWidth] = useState(320);
-  const activeRail = controlledRail === undefined ? uncontrolledRail : controlledRail;
+  const activeRail =
+    controlledRail === undefined ? uncontrolledRail : controlledRail;
   const setActiveRail = (id: string | null) => {
     if (controlledRail === undefined) setUncontrolledRail(id);
     onRailChange?.(id);
@@ -61,7 +66,10 @@ export function TexoAppShell({
 
     const resize = (pointerEvent: PointerEvent) => {
       setPanelWidth(
-        Math.min(750, Math.max(300, startWidth + pointerEvent.clientX - startX)),
+        Math.min(
+          750,
+          Math.max(300, startWidth + pointerEvent.clientX - startX),
+        ),
       );
     };
 
@@ -80,12 +88,21 @@ export function TexoAppShell({
   } as CSSProperties;
 
   return (
-    <BaseBox className={classes.root} data-panel-open={active ? 'true' : undefined} style={variables}>
+    <BaseBox
+      className={classes.root}
+      data-panel-open={active ? 'true' : undefined}
+      style={variables}
+    >
       <BaseBox component="nav" aria-label="Sidebar" className={classes.rail}>
         {rail.map((item) => {
           const selected = item.id === activeRail;
           return (
-            <BaseTooltip key={item.id} label={item.label} position="right" withArrow>
+            <BaseTooltip
+              key={item.id}
+              label={item.label}
+              position="right"
+              withArrow
+            >
               <BaseActionIcon
                 aria-label={item.label}
                 aria-pressed={selected}
@@ -104,9 +121,15 @@ export function TexoAppShell({
 
       {active ? (
         <>
-          <BaseBox component="aside" aria-label={active.label} className={classes.panel}>
+          <BaseBox
+            component="aside"
+            aria-label={active.label}
+            className={classes.panel}
+          >
             <BaseBox className={classes.panelHeader}>{active.header}</BaseBox>
-            <BaseBox className={classes.panelSubheader}>{active.subheader}</BaseBox>
+            <BaseBox className={classes.panelSubheader}>
+              {active.subheader}
+            </BaseBox>
             <BaseBox className={classes.panelBody}>{active.body}</BaseBox>
           </BaseBox>
 
@@ -126,6 +149,7 @@ export function TexoAppShell({
           {children}
         </BaseBox>
       </BaseBox>
+      {footer ? <BaseBox className={classes.footer}>{footer}</BaseBox> : null}
     </BaseBox>
   );
 }

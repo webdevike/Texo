@@ -769,6 +769,7 @@ function Workspace() {
           setActiveRail(id);
           if (id === 'library' && pathname !== '/canvas') navigate('/canvas');
         }}
+        footer={<ChatDock />}
         previewTabs={onPages ? pageToolbar : previewTabs}
         rail={rail}
       >
@@ -799,8 +800,6 @@ function Workspace() {
             ))}
           <Route path="*" element={<Navigate to="/theme" replace />} />
         </Routes>
-
-        <ChatDock />
 
         <TexoPanel
           gutter={0}

@@ -1,10 +1,12 @@
+/* Linear-style shell: rail and sidebar sit on a quiet surface with no borders;
+   the workspace is an inset card; an optional footer strip runs under it. */
 .root {
   height: 100dvh;
   position: relative;
   display: grid;
   grid-template-columns: var(--texo-rail-width) minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr);
-  background: var(--mantine-color-body);
+  grid-template-rows: minmax(0, 1fr) auto;
+  background: var(--texo-color-surface, var(--mantine-color-gray-0));
 }
 
 .root[data-panel-open] {
@@ -12,12 +14,12 @@
 }
 
 .rail {
+  grid-row: 1 / -1;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
   padding-block: var(--mantine-spacing-xs);
-  border-right: 1px solid var(--mantine-color-default-border);
 }
 
 .railButton[data-active] {
@@ -25,11 +27,11 @@
 }
 
 .panel {
+  grid-row: 1 / -1;
   min-width: 0;
   min-height: 0;
   display: grid;
   grid-template-rows: 56px 48px minmax(0, 1fr);
-  border-right: 1px solid var(--mantine-color-default-border);
 }
 
 .resizer {
@@ -52,6 +54,10 @@
   display: flex;
   align-items: center;
   padding-inline: var(--mantine-spacing-sm);
+}
+
+.actions,
+.previewTabs {
   border-bottom: 1px solid var(--mantine-color-default-border);
 }
 
@@ -71,6 +77,24 @@
   min-height: 0;
   display: grid;
   grid-template-rows: 56px 48px minmax(0, 1fr);
+  margin: var(--mantine-spacing-xs) var(--mantine-spacing-xs) 0 0;
+  border-radius: var(--mantine-radius-md);
+  background: var(--mantine-color-body);
+  box-shadow: var(--texo-card-shadow, var(--mantine-shadow-xs));
+  overflow: hidden;
+}
+
+.root:not([data-panel-open]) .workspace {
+  margin-left: 0;
+}
+
+.footer {
+  grid-column: -2 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 36px;
+  padding-inline: var(--mantine-spacing-xs);
 }
 
 .actions {
@@ -87,31 +111,39 @@
   min-height: 0;
   overflow: auto;
   padding: var(--mantine-spacing-md);
-  background: var(--texo-color-surface, var(--mantine-color-gray-0));
 }
 
 @media (max-width: 48em) {
   .root,
   .root[data-panel-open] {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+  }
+
+  .rail,
+  .panel {
+    grid-row: auto;
   }
 
   .rail {
     flex-direction: row;
     padding-inline: var(--mantine-spacing-xs);
-    border-right: 0;
-    border-bottom: 1px solid var(--mantine-color-default-border);
   }
 
   .panel {
     grid-template-rows: 56px 48px auto;
-    border-right: 0;
-    border-bottom: 1px solid var(--mantine-color-default-border);
   }
 
   .panelBody {
     max-height: 240px;
+  }
+
+  .workspace {
+    margin: 0 var(--mantine-spacing-xs);
+  }
+
+  .footer {
+    grid-column: 1 / -1;
   }
 
   .resizer {
