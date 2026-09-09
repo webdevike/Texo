@@ -1,5 +1,5 @@
 .root {
-  min-height: 100dvh;
+  height: 100dvh;
   position: relative;
   display: grid;
   grid-template-columns: var(--texo-rail-width) minmax(0, 1fr);
