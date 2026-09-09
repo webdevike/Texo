@@ -16,6 +16,10 @@
   padding-bottom: var(--mantine-spacing-xs);
 }
 
+.list > * {
+  flex-shrink: 0;
+}
+
 .composer {
   display: flex;
   flex-direction: column;
@@ -44,46 +48,61 @@
   padding-inline: 2px;
 }
 
-.tool {
-  border: 1px solid var(--mantine-color-default-border);
-  border-radius: var(--mantine-radius-sm);
-  overflow: hidden;
-}
-
-.tool[data-failed] {
-  border-color: var(--mantine-color-red-4);
-}
-
-.toolHeader {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  min-width: 0;
-  padding: 4px 8px;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  text-align: left;
+.toolBadge {
+  align-self: flex-start;
+  max-width: 100%;
   cursor: pointer;
 }
 
-.toolHeader > :last-child {
-  min-width: 0;
+.toolBadge[data-disabled] {
+  cursor: default;
 }
 
-.output {
-  margin: 0;
-  max-height: 240px;
+.toolTitle {
+  margin-left: 6px;
+  font-weight: 400;
+  opacity: 0.75;
+}
+
+.toolDropdown {
+  padding: var(--mantine-spacing-xs);
+}
+
+.toolOutput {
+  max-height: 60vh;
   overflow: auto;
-  padding: 8px;
-  border-top: 1px solid var(--mantine-color-default-border);
-  background: var(--mantine-color-default-hover);
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-sm);
   font-size: 11px;
-  line-height: 1.4;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+}
+
+.toolOutput pre,
+.toolOutput code {
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.thinkingItem {
+  border: 0;
+}
+
+.thinkingControl {
+  padding: 0;
+  min-height: 0;
+  color: var(--mantine-color-dimmed);
+  font-size: var(--mantine-font-size-xs);
+}
+
+.thinkingControl:hover {
+  background: transparent;
+}
+
+.thinkingLabel {
+  padding: 2px 0;
+}
+
+.thinkingContent {
+  padding: 2px 0 4px;
 }
 
 .ask {

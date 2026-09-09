@@ -7,11 +7,15 @@ import {
 } from '@tabler/icons-react';
 import { useEffect, useRef, useState } from 'react';
 import {
+  BaseAccordion,
   BaseActionIcon,
+  BaseBadge,
   BaseButton,
+  BaseCodeHighlight,
   BaseGroup,
   BaseLoader,
   BaseMenu,
+  BasePopover,
   BaseStack,
   BaseText,
   BaseTextarea,
@@ -234,14 +238,34 @@ function Item({ item }: { item: ChatItem }) {
     case 'assistant':
       return (
         <div className={classes.assistant}>
-          {item.thinking && !item.text && (
-            <BaseText c="dimmed" size="xs" className={classes.text}>
-              {item.thinking}
+          {item.thinking && (
+            <BaseAccordion
+              chevronPosition="left"
+              classNames={{
+                control: classes.thinkingControl,
+                content: classes.thinkingContent,
+                item: classes.thinkingItem,
+                label: classes.thinkingLabel,
+              }}
+              variant="default"
+            >
+              <BaseAccordion.Item value="thinking">
+                <BaseAccordion.Control>
+                  {item.text || item.done ? 'Thinking' : 'Thinking...'}
+                </BaseAccordion.Control>
+                <BaseAccordion.Panel>
+                  <BaseText c="dimmed" size="xs" className={classes.text}>
+                    {item.thinking}
+                  </BaseText>
+                </BaseAccordion.Panel>
+              </BaseAccordion.Item>
+            </BaseAccordion>
+          )}
+          {item.text && (
+            <BaseText size="sm" className={classes.text}>
+              {item.text}
             </BaseText>
           )}
-          <BaseText size="sm" className={classes.text}>
-            {item.text}
-          </BaseText>
         </div>
       );
     case 'tool':
@@ -257,27 +281,71 @@ function Item({ item }: { item: ChatItem }) {
   }
 }
 
+const languageByExtension: Record<string, string> = {
+  ts: 'ts',
+  tsx: 'tsx',
+  js: 'js',
+  jsx: 'jsx',
+  mjs: 'js',
+  mts: 'ts',
+  css: 'css',
+  json: 'json',
+  md: 'markdown',
+  html: 'html',
+  sh: 'bash',
+};
+
+function outputLanguage(item: ChatItem & { kind: 'tool' }) {
+  if (item.name === 'bash') return 'bash';
+  if (item.name === 'grep' || item.name === 'glob') return 'text';
+  const extension = item.path?.match(/\.([a-z]+)(?::[^/]*)?$/)?.[1];
+  return (extension && languageByExtension[extension]) ?? 'text';
+}
+
 function ToolItem({ item }: { item: ChatItem & { kind: 'tool' } }) {
-  const [open, setOpen] = useState(false);
+  const [opened, setOpened] = useState(false);
+  const hasOutput = Boolean(item.output);
   return (
-    <div className={classes.tool} data-failed={item.ok === false || undefined}>
-      <button
-        className={classes.toolHeader}
-        onClick={() => setOpen((v) => !v)}
-        type="button"
-      >
-        {!item.done && <BaseLoader size={10} />}
-        <BaseText size="xs" fw={600} span>
+    <BasePopover
+      opened={opened && hasOutput}
+      onChange={setOpened}
+      position="right-start"
+      shadow="md"
+      width={560}
+      withArrow
+    >
+      <BasePopover.Target>
+        <BaseBadge
+          className={classes.toolBadge}
+          color={item.ok === false ? 'red' : item.done ? 'gray' : 'blue'}
+          component="button"
+          data-disabled={!hasOutput || undefined}
+          fw={500}
+          leftSection={!item.done ? <BaseLoader size={8} /> : undefined}
+          onClick={() => hasOutput && setOpened((value) => !value)}
+          size="sm"
+          title={item.title}
+          tt="none"
+          type="button"
+          variant="light"
+        >
           {item.name}
+          <span className={classes.toolTitle}>{item.title}</span>
+        </BaseBadge>
+      </BasePopover.Target>
+      <BasePopover.Dropdown className={classes.toolDropdown}>
+        <BaseText size="xs" fw={600} mb={6} truncate>
+          {item.name}: {item.path ?? item.title}
         </BaseText>
-        <BaseText c="dimmed" size="xs" span truncate>
-          {item.title}
-        </BaseText>
-      </button>
-      {open && item.output && (
-        <pre className={classes.output}>{item.output}</pre>
-      )}
-    </div>
+        <div className={classes.toolOutput}>
+          <BaseCodeHighlight
+            code={item.output ?? ''}
+            language={outputLanguage(item)}
+            withCopyButton
+          />
+        </div>
+      </BasePopover.Dropdown>
+    </BasePopover>
   );
 }
 

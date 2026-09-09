@@ -233,6 +233,7 @@ class Thread {
           id: String(frame.toolCallId),
           kind: 'tool',
           name: String(frame.toolName ?? 'tool'),
+          path: typeof args.path === 'string' ? args.path : undefined,
           title:
             typeof frame.intent === 'string'
               ? frame.intent

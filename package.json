@@ -23,7 +23,8 @@
     "@tanstack/react-virtual": "^3.14.11",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-router-dom": "6.30.3"
+    "react-router-dom": "6.30.3",
+    "shiki": "^3.23.0"
   },
   "devDependencies": {
     "@babel/core": "^7.14.5",

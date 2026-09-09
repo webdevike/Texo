@@ -24,6 +24,7 @@ export type ChatItem =
       kind: 'tool';
       name: string;
       title: string;
+      path?: string;
       done: boolean;
       ok?: boolean;
       output?: string;
