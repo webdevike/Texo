@@ -17,6 +17,7 @@ function texo(options = {}) {
 	const entry = source ? resolve(source, "packages/ui/src/index.ts") : void 0;
 	return {
 		name: "texo",
+		enforce: "pre",
 		config(config) {
 			return {
 				base: preview ? "/preview/" : void 0,

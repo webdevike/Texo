@@ -1,6 +1,6 @@
 {
   "name": "@texo/ui",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Texo UI system: Mantine under stable Base* names plus Texo composites, presets, and the workspace bridge.",
   "license": "MIT",
   "repository": {
