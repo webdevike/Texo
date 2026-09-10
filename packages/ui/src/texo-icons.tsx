@@ -35,11 +35,11 @@ export const TEXO_ICONS = {
   users: IconUsers,
 } as const;
 
-const TEXO_FILLED_ICONS = {
+const TEXO_FILLED_ICONS: Partial<Record<keyof typeof TEXO_ICONS, typeof IconHeartFilled>> = {
   heart: IconHeartFilled,
   shield: IconShieldCheckFilled,
   sparkles: IconSparklesFilled,
-} as const;
+};
 
 export type TexoIconName = keyof typeof TEXO_ICONS;
 export interface TexoIconValue {
@@ -50,7 +50,7 @@ export interface TexoIconValue {
 
 export function TexoIcon({ value, ...props }: IconProps & { value: TexoIconValue }) {
   const OutlineIcon = TEXO_ICONS[value.name] ?? IconActivity;
-  const FilledIcon = TEXO_FILLED_ICONS[value.name as keyof typeof TEXO_FILLED_ICONS];
+  const FilledIcon = TEXO_FILLED_ICONS[value.name];
   const Icon = value.variant === 'filled' && FilledIcon ? FilledIcon : OutlineIcon;
   return <Icon {...props} stroke={value.variant === 'outline' ? value.stroke : undefined} />;
 }

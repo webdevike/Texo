@@ -23,6 +23,7 @@ import { BaseProvider } from './provider';
 import {
   ColorSchemeScript,
   type CSSVariablesResolver,
+  type MantineColorShade,
   type MantineColorsTuple,
   type MantineThemeOverride,
 } from './mantine';
@@ -90,7 +91,7 @@ export interface TexoThemeConfig {
   luminanceThreshold: number;
   primaryColor: string;
   primaryPalette: MantineColorsTuple;
-  primaryShade: { dark: number; light: number };
+  primaryShade: { dark: MantineColorShade; light: MantineColorShade };
   radius: Record<TexoSize, string>;
   respectReducedMotion: boolean;
   scale: number;
