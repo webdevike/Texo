@@ -1,8 +1,10 @@
+import './texo-ui.css';
+import { n as useTexoBridge, t as TEXO_PREVIEW_BASE } from "./chunks/texo-bridge-DuQ665gA.js";
 import "@mantine/core/styles.css";
 import "@mantine/code-highlight/styles.css";
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import { IconActivity, IconArrowDown, IconArrowUp, IconBuilding, IconCalendar, IconChartBar, IconCheck, IconFilter, IconFocus2, IconGripHorizontal, IconGripVertical, IconHeart, IconHeartFilled, IconLink, IconList, IconPencil, IconPlayerStop, IconPlus, IconRocket, IconSearch, IconShieldCheck, IconShieldCheckFilled, IconSitemap, IconSparkles, IconSparklesFilled, IconToggleLeft, IconTrash, IconTypography, IconUsers, IconX } from "@tabler/icons-react";
-import { Component, createContext, createElement, memo, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Component, createContext, createElement, memo, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useDraggable, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -279,6 +281,12 @@ function TexoPanel({ children, contained = false, gutter = 16, onClose, opened, 
 //#region src/texo-component.tsx
 function defineTexoComponent(definition) {
 	return definition;
+}
+/** True for values produced by `defineTexoComponent`; used to collect definitions from discovered modules. */
+function isTexoComponentDefinition(value) {
+	if (!value || typeof value !== "object") return false;
+	const candidate = value;
+	return typeof candidate.id === "string" && typeof candidate.name === "string" && candidate.component != null && typeof candidate.properties === "object" && typeof candidate.defaultProps === "object";
 }
 var TexoComponentErrorBoundary = class extends Component {
 	constructor(..._args) {
@@ -2752,59 +2760,6 @@ var TexoMarkdown = memo(function TexoMarkdown({ children, size = "sm", c }) {
 	});
 });
 //#endregion
-//#region src/texo-bridge.ts
-/**
-* Bridge between the Texo admin and the app it frames under /preview/.
-*
-* The framed app describes its designable pages (`texo:pages`) and reports the
-* page it is showing (`texo:route`); the admin steers it with `texo:navigate`.
-* Both documents share an origin, so the admin can also read the frame's DOM
-* (`data-texo-page` on <html>, `data-target` markers) for Prototype mode.
-*/
-var TEXO_PREVIEW_BASE = "/preview";
-var isBrowser = typeof window !== "undefined";
-function post(message) {
-	if (isBrowser && window.parent !== window) window.parent.postMessage(message, window.location.origin);
-}
-var useIsomorphicLayoutEffect = isBrowser ? useLayoutEffect : useEffect;
-/** Mount once near the app root; the framed app becomes visible to the admin. */
-function useTexoBridge({ pages, page, navigate }) {
-	useIsomorphicLayoutEffect(() => {
-		document.documentElement.dataset.texoPage = page?.id ?? "";
-		return () => {
-			delete document.documentElement.dataset.texoPage;
-		};
-	}, [page]);
-	useEffect(() => {
-		post({
-			type: "texo:pages",
-			pages: pages.map(({ id, label, sourcePath, path }) => ({
-				id,
-				label,
-				sourcePath,
-				path
-			}))
-		});
-	}, [pages, page]);
-	useEffect(() => {
-		post({
-			type: "texo:route",
-			pageId: page?.id ?? null,
-			path: page?.path ?? null
-		});
-	}, [page]);
-	useEffect(() => {
-		const onMessage = (event) => {
-			if (event.origin !== window.location.origin || event.source !== window.parent) return;
-			if (event.data?.type !== "texo:navigate") return;
-			const target = pages.find((item) => item.id === event.data.pageId);
-			if (target) navigate(target);
-		};
-		window.addEventListener("message", onMessage);
-		return () => window.removeEventListener("message", onMessage);
-	}, [pages, navigate]);
-}
-//#endregion
 //#region src/texo-theme-sync.tsx
 /**
 * The admin persists its theme under this localStorage key. Apps framed under
@@ -2859,6 +2814,6 @@ function TexoThemeSync() {
 	return null;
 }
 //#endregion
-export { BaseAccordion, BaseActionIcon, BaseAlert, BaseAnchor, BaseAppShell, BaseBadge, BaseBox, BaseBurger, BaseButton, BaseCard, BaseCenter, BaseCheckbox, BaseCloseButton, BaseCode, BaseCodeHighlight, BaseCollapse, BaseColorInput, BaseCombobox, BaseComboboxPopover, BaseContainer, BaseDivider, BaseDrawer, BaseFieldset, BaseGrid, BaseGroup, BaseHoverCard, BaseImage, BaseInputBase, BaseKbd, BaseLoader, BaseMenu, BaseModal, BaseMultiSelect, BaseNativeSelect, BaseNavLink, BaseNotification, BaseNumberInput, BasePagination, BasePaper, BasePasswordInput, BasePill, BasePinInput, BasePopover, BaseProvider, BaseScrollArea, BaseScroller, BaseSelect, BaseSimpleGrid, BaseStack, BaseSwitch, BaseTable, BaseTabs, BaseText, BaseTextInput, BaseTextarea, BaseThemeIcon, BaseTimeline, BaseTitle, BaseTooltip, BaseTree, BaseUnstyledButton, TEXO_ICONS, TEXO_PREVIEW_BASE, TEXO_SIZE_KEYS, TEXO_THEME_KEY, TEXO_THEME_PRESETS, TexoAppShell, TexoBoard, TexoChatComposer, TexoColorSchemeScript, TexoCommandPalette, TexoComponent, TexoDataTable, TexoFieldList, TexoFilterBar, TexoIcon, TexoIconPicker, TexoKeys, TexoMarkdown, TexoNavItem, TexoNavSection, TexoPanel, TexoTable, TexoThemePicker, TexoThemeProvider, TexoThemeSwatchMenu, TexoThemeSync, bindHotkeys, chordOf, cycleSort, defineTexoComponent, filtersToWhere, formatKeys, fuzzyMatch, isEditable, isMac, keysOf, parseChord, parseSequence, rankItems, readTexoTheme, texoFieldKindLabel, theme, useBaseCombobox, useBaseDisclosure, useBaseDocumentTitle, useBaseLocalStorage, useBaseMediaQuery, useBaseMounted, useBaseViewportSize, useHotkeys, useTexoBridge, useTexoTheme, writeTexoTheme };
+export { BaseAccordion, BaseActionIcon, BaseAlert, BaseAnchor, BaseAppShell, BaseBadge, BaseBox, BaseBurger, BaseButton, BaseCard, BaseCenter, BaseCheckbox, BaseCloseButton, BaseCode, BaseCodeHighlight, BaseCollapse, BaseColorInput, BaseCombobox, BaseComboboxPopover, BaseContainer, BaseDivider, BaseDrawer, BaseFieldset, BaseGrid, BaseGroup, BaseHoverCard, BaseImage, BaseInputBase, BaseKbd, BaseLoader, BaseMenu, BaseModal, BaseMultiSelect, BaseNativeSelect, BaseNavLink, BaseNotification, BaseNumberInput, BasePagination, BasePaper, BasePasswordInput, BasePill, BasePinInput, BasePopover, BaseProvider, BaseScrollArea, BaseScroller, BaseSelect, BaseSimpleGrid, BaseStack, BaseSwitch, BaseTable, BaseTabs, BaseText, BaseTextInput, BaseTextarea, BaseThemeIcon, BaseTimeline, BaseTitle, BaseTooltip, BaseTree, BaseUnstyledButton, TEXO_ICONS, TEXO_PREVIEW_BASE, TEXO_SIZE_KEYS, TEXO_THEME_KEY, TEXO_THEME_PRESETS, TexoAppShell, TexoBoard, TexoChatComposer, TexoColorSchemeScript, TexoCommandPalette, TexoComponent, TexoDataTable, TexoFieldList, TexoFilterBar, TexoIcon, TexoIconPicker, TexoKeys, TexoMarkdown, TexoNavItem, TexoNavSection, TexoPanel, TexoTable, TexoThemePicker, TexoThemeProvider, TexoThemeSwatchMenu, TexoThemeSync, bindHotkeys, chordOf, cycleSort, defineTexoComponent, filtersToWhere, formatKeys, fuzzyMatch, isEditable, isMac, isTexoComponentDefinition, keysOf, parseChord, parseSequence, rankItems, readTexoTheme, texoFieldKindLabel, theme, useBaseCombobox, useBaseDisclosure, useBaseDocumentTitle, useBaseLocalStorage, useBaseMediaQuery, useBaseMounted, useBaseViewportSize, useHotkeys, useTexoBridge, useTexoTheme, writeTexoTheme };
 
 //# sourceMappingURL=index.js.map

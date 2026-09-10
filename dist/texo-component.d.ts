@@ -41,6 +41,8 @@ export interface TexoComponentDefinition<Props extends Record<string, unknown> =
 }
 export type TexoComponentRegistry = Record<string, TexoComponentDefinition<any>>;
 export declare function defineTexoComponent<Props extends Record<string, unknown>>(definition: TexoComponentDefinition<Props>): TexoComponentDefinition<Props>;
+/** True for values produced by `defineTexoComponent`; used to collect definitions from discovered modules. */
+export declare function isTexoComponentDefinition(value: unknown): value is TexoComponentDefinition;
 export declare function TexoComponent({ id, props, registry, }: {
     id: string;
     props?: Record<string, unknown>;

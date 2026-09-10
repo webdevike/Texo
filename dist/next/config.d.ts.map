@@ -1,0 +1,1 @@
+{"version":3,"file":"config.d.ts","sourceRoot":"","sources":["../../src/next/config.ts"],"names":[],"mappings":"AAAA;;;GAGG;AACH,MAAM,WAAW,cAAc;IAC7B,QAAQ,CAAC,EAAE,MAAM,CAAC;IAClB,iBAAiB,CAAC,EAAE,MAAM,EAAE,CAAC;IAC7B,CAAC,GAAG,EAAE,MAAM,GAAG,OAAO,CAAC;CACxB;AAED;;;;;;;GAOG;AACH,wBAAgB,QAAQ,CAAC,CAAC,SAAS,cAAc,EAAE,MAAM,GAAE,CAAW,GAAG,CAAC,CAUzE"}
