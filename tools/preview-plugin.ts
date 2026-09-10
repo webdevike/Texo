@@ -1,12 +1,12 @@
 import { resolve } from 'node:path';
 import { createServer, type Plugin, type ViteDevServer } from 'vite';
 
-import { loadAppConfig } from './app-config';
+import { loadProject } from './project-config';
 
 /**
  * Serves the framed app under /preview/ on the admin. By default that is the
  * bundled consumer app (preview/), run as its own Vite dev server on :4210;
- * with project/app.json it is an external dev server the user runs themselves.
+ * with `texo dev <path>` it is the project's own dev server (texo.json `url`).
  * Same origin either way, so the admin can reach the frame's DOM for Prototype
  * mode, and a broken page only breaks the frame.
  */
@@ -17,8 +17,8 @@ export function previewApp(): Plugin {
   return {
     name: 'texo-preview-app',
     apply: 'serve',
-    config(config) {
-      const app = loadAppConfig(config.root ?? process.cwd());
+    config() {
+      const app = loadProject();
       return {
         server: {
           proxy: {
@@ -31,9 +31,9 @@ export function previewApp(): Plugin {
       };
     },
     async configureServer(server) {
-      const app = loadAppConfig(server.config.root);
+      const app = loadProject();
       if (app) {
-        server.config.logger.info(`  texo preview proxied to ${app.url} (project/app.json)`);
+        server.config.logger.info(`  texo preview proxied to ${app.url} (${app.root})`);
         return;
       }
       preview = await createServer({

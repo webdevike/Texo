@@ -3,14 +3,18 @@ import { readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import type { IncomingMessage } from 'node:http';
 import type { Plugin, ViteDevServer } from 'vite';
-import { canvasFile } from '../src/app/canvas-document';
+import { canvasFile, type CanvasDocument } from '../src/app/canvas-document';
 import { prototypeFile } from '../src/app/prototype-document';
+import { themeFile } from '../src/app/theme-document';
+import { loadProject } from './project-config';
 
 /**
- * Serves the editable JSON files under project/ to the same-origin dev editor:
- * GET returns `{ document, revision }`, PUT saves `{ document, revision }` only
- * when the revision still matches the file on disk. project/canvas.json also
- * feeds the `virtual:texo-canvas-runtime` module used by production builds.
+ * Serves the editable JSON files to the same-origin dev editor: GET returns
+ * `{ document, revision }`, PUT saves `{ document, revision }` only when the
+ * revision still matches the file on disk. project/canvas.json also feeds the
+ * `virtual:texo-canvas-runtime` module used by production builds. Files marked
+ * `optional` may be absent: GET then returns a null document whose revision
+ * lets the first PUT create the file.
  */
 const virtualId = 'virtual:texo-canvas-runtime';
 const resolvedVirtualId = `\0${virtualId}`;
@@ -22,7 +26,10 @@ type ProjectFile = {
   endpoint: string;
   label: string;
   validate: (value: unknown) => void;
+  optional?: boolean;
 };
+
+const missing = { raw: '', document: null, revision: revisionOf('') };
 
 class FileError extends Error {
   constructor(
@@ -38,6 +45,7 @@ async function readDocument(path: string, file: ProjectFile) {
   try {
     raw = await readFile(path, 'utf8');
   } catch (error) {
+    if (file.optional && (error as NodeJS.ErrnoException).code === 'ENOENT') return missing;
     throw new FileError(
       500,
       `Cannot read ${file.label}. Restore the file or check its permissions. ${error instanceof Error ? error.message : ''}`,
@@ -162,7 +170,7 @@ function serve(server: ViteDevServer, path: string, file: ProjectFile) {
         const temporary = `${path}.${randomUUID()}.tmp`;
         try {
           await writeFile(temporary, next, { flag: 'wx' });
-          if ((await readFile(path, 'utf8')) !== current.raw)
+          if ((await readFile(path, 'utf8').catch(() => '')) !== current.raw)
             throw new FileError(409, conflictMessage);
           await rename(temporary, path);
         } finally {
@@ -186,6 +194,7 @@ function serve(server: ViteDevServer, path: string, file: ProjectFile) {
 export function projectFiles(): Plugin {
   let canvasPath: string;
   let prototypePath: string;
+  const project = loadProject();
   return {
     name: 'texo-project-files',
     configResolved(config) {
@@ -197,7 +206,7 @@ export function projectFiles(): Plugin {
     },
     async load(id) {
       if (id !== resolvedVirtualId) return;
-      const { document } = await readDocument(canvasPath, canvasFile);
+      const document = (await readDocument(canvasPath, canvasFile)).document as CanvasDocument;
       this.addWatchFile(canvasPath);
       return `export const instances = JSON.parse(${JSON.stringify(JSON.stringify(document.instances))});\nexport default instances;\n`;
     },
@@ -209,6 +218,9 @@ export function projectFiles(): Plugin {
     configureServer(server) {
       serve(server, canvasPath, canvasFile);
       serve(server, prototypePath, prototypeFile);
+      // Without a project there is no theme file; the endpoint 404s and the
+      // admin keeps its theme in localStorage only.
+      if (project) serve(server, project.themePath, themeFile);
     },
   };
 }

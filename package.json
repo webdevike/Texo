@@ -5,6 +5,7 @@
   "license": "MIT",
   "scripts": {
     "start": "nx serve",
+    "texo": "node tools/texo.mts",
     "build": "nx build",
     "test": "nx test"
   },

@@ -16,15 +16,15 @@ import type {
 } from '../src/app/chat-protocol';
 import type { AgentContextSnapshot } from '../src/context/agent-context';
 import { formatAgentContextPrompt } from '../src/context/agent-context-prompt';
-import { loadAppConfig } from './app-config';
+import { loadProject } from './project-config';
 
 /**
  * Chat threads for the design workspace. Each thread is its own `omp --mode rpc`
  * child running in this repository, so the agent edits real files here and the
  * page it writes shows up through Vite HMR. Frames flow over Vite's dev
- * WebSocket under the `texo:chat` event; transcripts persist per thread under
- * project/threads/ so a dev-server restart resumes both the omp session and the
- * visible history.
+ * WebSocket under the `texo:chat` event; transcripts persist per thread (under
+ * the project's .texo/threads/, or project/threads/ for the bundled preview) so
+ * a dev-server restart resumes both the omp session and the visible history.
  */
 
 const EVENT = 'texo:chat';
@@ -487,8 +487,12 @@ export function chatThreads(): Plugin {
     apply: 'serve',
     configureServer(server) {
       const root = server.config.root;
-      const app = loadAppConfig(root);
-      const host = new Host(app?.root ?? root, resolve(root, 'project/threads'), server);
+      const project = loadProject();
+      const host = new Host(
+        project?.agentRoot ?? root,
+        project?.threadsDir ?? resolve(root, 'project/threads'),
+        server,
+      );
       const loaded = host.load();
       server.ws.on(EVENT, (data: ChatClientMessage, client) => {
         void loaded.then(() => host.handle(data, client));

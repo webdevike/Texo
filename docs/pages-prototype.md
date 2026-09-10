@@ -4,12 +4,26 @@ Route: `/pages/:pageId`. The page itself runs in the consumer app (`preview/`, i
 sidebar, page tabs in the top row, a toolbar with **Prototype** on the right, and the real
 page rendered inset below.
 
-## Framing an external app
-`project/app.json` (`{ "url", "root" }`) replaces the bundled consumer app: `/preview/` is
-proxied to `url` (the app must serve itself under `/preview/`, e.g. Vite `base`) and chat
-agents run in `root`. The app mounts `useTexoBridge` from `@texo/ui` with its page list
-(`id`, `label`, `path`, `sourcePath` relative to `root`) and `TexoThemeSync` to follow the
-admin's saved theme. Without the file, `preview/` runs on :4210 as before.
+## Framing a project
+`pnpm texo dev <path>` (or `node tools/texo.mts dev <path>`) frames the project at `path`
+instead of the bundled consumer app. The project holds a `texo.json`:
+
+```json
+{ "url": "http://localhost:3000", "agentRoot": "../.." }
+```
+
+`/preview/` is proxied to `url` (the app must serve itself under `/preview/`, e.g. Vite `base`)
+and chat agents run in `agentRoot` (default: the project directory itself; point it at the
+monorepo root so the agent sees the whole repo). The app installs `@texo/ui`
+(`github:webdevike/Texo#ui-v<version>`, published by `node tools/release-ui.mts`) and mounts
+`useTexoBridge` with its page list (`id`, `label`, `path`, `sourcePath` relative to
+`agentRoot`), `TexoThemeProvider`, and `TexoThemeSync` to follow the admin's theme.
+
+Per-project state lives next to `texo.json`: `texo.theme.json` is the theme the admin last
+saved (served at `/__texo/theme`, seeded into the admin at boot, and imported by the app as
+its `TexoThemeProvider` initial so the decision ships with it; commit it) and `.texo/threads/`
+holds chat transcripts plus their omp session mapping (gitignore it). Without a project,
+`preview/` runs on :4210 and threads live in `project/threads/`.
 
 ## Prototype mode
 - **Off**: the page runs as built (row click opens the details drawer).
