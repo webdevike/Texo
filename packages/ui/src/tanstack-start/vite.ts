@@ -26,6 +26,9 @@ export function texo(options: TexoViteOptions = {}): Plugin {
   const entry = source ? resolve(source, 'packages/ui/src/index.ts') : undefined;
   return {
     name: 'texo',
+    // TanStack Start reads `base` in its own pre-enforced config hook; list
+    // texo() before tanstackStart() so the /preview/ base is visible to it.
+    enforce: 'pre',
     config(config) {
       return {
         base: preview ? '/preview/' : undefined,
