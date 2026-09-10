@@ -5,7 +5,7 @@
   grid-template-columns: var(--texo-sidebar-width) minmax(0, 1fr);
   grid-template-rows: 40px minmax(0, 1fr);
   overflow: hidden;
-  border-radius: var(--mantine-radius-xl);
+  border-radius: var(--mantine-radius-default);
   background: var(--mantine-color-body);
   box-shadow: var(--mantine-shadow-md);
 }
@@ -43,8 +43,8 @@
 .workspaceButton {
   min-height: 32px;
   margin-inline-start: var(--mantine-spacing-xs);
-  padding-inline: 4px 8px;
-  border-radius: var(--mantine-radius-sm);
+  padding-inline: calc(var(--mantine-spacing-xs) / 2) var(--mantine-spacing-xs);
+  border-radius: var(--mantine-radius-default);
   background: transparent;
   color: var(--mantine-color-text);
 }
@@ -58,7 +58,7 @@
   width: 24px;
   height: 24px;
   place-items: center;
-  border-radius: var(--mantine-radius-sm);
+  border-radius: var(--mantine-radius-default);
   background: var(--mantine-color-text);
   color: var(--mantine-color-body);
   font-size: var(--mantine-font-size-sm);
@@ -78,7 +78,7 @@
   height: var(--texo-sidebar-row-height);
   min-height: var(--texo-sidebar-row-height);
   padding-block: 0;
-  border-radius: var(--mantine-radius-sm);
+  border-radius: var(--mantine-radius-default);
 }
 
 .nav [data-active] {
@@ -114,7 +114,7 @@
   max-width: 70%;
   margin-left: auto;
   padding: var(--mantine-spacing-xs) var(--mantine-spacing-sm);
-  border-radius: var(--mantine-radius-lg);
+  border-radius: var(--mantine-radius-default);
   background: var(--texo-color-muted);
 }
 
@@ -127,7 +127,7 @@
   margin-top: var(--mantine-spacing-sm);
   padding: var(--mantine-spacing-sm);
   border: 1px solid var(--mantine-color-default-border);
-  border-radius: var(--mantine-radius-md);
+  border-radius: var(--mantine-radius-default);
   background: var(--texo-color-card);
 }
 
@@ -136,7 +136,7 @@
   width: 54px;
   height: 38px;
   place-items: center;
-  border-radius: var(--mantine-radius-sm);
+  border-radius: var(--mantine-radius-default);
   background: var(--mantine-primary-color-light);
   color: var(--mantine-primary-color-filled);
 }
@@ -149,7 +149,7 @@
   border-radius: 50%;
   background: var(--mantine-primary-color-filled);
   color: var(--mantine-primary-color-contrast);
-  font-size: 9px;
+  font-size: calc(var(--mantine-font-size-xs) * 0.75);
 }
 
 .composer {
@@ -159,7 +159,7 @@
   left: var(--mantine-spacing-lg);
   padding: var(--mantine-spacing-sm);
   border: 1px solid var(--mantine-color-default-border);
-  border-radius: var(--mantine-radius-lg);
+  border-radius: var(--mantine-radius-default);
   background: var(--texo-color-input);
   box-shadow: var(--mantine-shadow-xs);
 }
@@ -196,7 +196,6 @@
 @media (max-width: 36em) {
   .window {
     min-height: 640px;
-    border-radius: var(--mantine-radius-md);
   }
 
   .header {

@@ -5,7 +5,7 @@
 }
 
 .brand {
-  padding: 2px 4px 2px 8px;
+  padding: calc(var(--mantine-spacing-xs) / 5) calc(var(--mantine-spacing-xs) / 2) calc(var(--mantine-spacing-xs) / 5) var(--mantine-spacing-xs);
 }
 
 .mark {
@@ -14,29 +14,29 @@
   justify-content: center;
   width: 22px;
   height: 22px;
-  border-radius: var(--mantine-radius-sm);
+  border-radius: var(--mantine-radius-default);
   background: var(--mantine-primary-color-filled);
   color: var(--mantine-primary-color-contrast);
-  font-size: 12px;
+  font-size: var(--mantine-font-size-xs);
   font-weight: 700;
 }
 
 .group {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: calc(var(--mantine-spacing-xs) / 10);
 }
 
 .item,
 .section {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--mantine-spacing-xs);
   width: 100%;
   min-height: 30px;
-  padding: 0 8px;
+  padding: 0 var(--mantine-spacing-xs);
   border: 0;
-  border-radius: var(--mantine-radius-sm);
+  border-radius: var(--mantine-radius-default);
   background: transparent;
   color: var(--mantine-color-text);
   font: inherit;
@@ -81,6 +81,6 @@
 .children {
   display: flex;
   flex-direction: column;
-  gap: 1px;
-  padding-left: 12px;
+  gap: calc(var(--mantine-spacing-xs) / 10);
+  padding-left: var(--mantine-spacing-sm);
 }

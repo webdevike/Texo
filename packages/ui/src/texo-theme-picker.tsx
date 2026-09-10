@@ -5,7 +5,9 @@ import {
   BaseComboboxPopover,
   BaseGroup,
   BaseInputBase,
+  BaseMenu,
   BaseText,
+  BaseUnstyledButton,
 } from './components';
 import classes from './texo-theme-picker.module.css';
 import type { TexoThemeConfig } from './texo-theme-provider';
@@ -31,7 +33,7 @@ function ThemeSwatches({ config }: { config: TexoThemeConfig }) {
   ];
 
   return (
-    <BaseGroup gap={3} wrap="nowrap">
+    <BaseGroup gap="calc(var(--mantine-spacing-xs) / 3)" wrap="nowrap">
       {colors.map((color, index) => (
         <BaseBox
           key={`${color}-${index}`}
@@ -40,7 +42,7 @@ function ThemeSwatches({ config }: { config: TexoThemeConfig }) {
           w={12}
           style={{
             border: '1px solid var(--mantine-color-default-border)',
-            borderRadius: 'var(--mantine-radius-sm)',
+            borderRadius: 'var(--mantine-radius-default)',
           }}
         />
       ))}
@@ -129,5 +131,48 @@ export function TexoThemePicker({
         </BaseInputBase>
       </BaseComboboxPopover.Target>
     </BaseComboboxPopover>
+  );
+}
+
+/**
+ * Compact picker: the current theme's swatches as a button; clicking opens a
+ * menu of themes. For chrome where a full select would be too loud.
+ */
+export function TexoThemeSwatchMenu({
+  onChange,
+  options,
+  value,
+}: TexoThemePickerProps) {
+  const selected = options.find((option) => option.value === value) ?? options[0];
+
+  return (
+    <BaseMenu position="bottom-start" shadow="md" width={240} withinPortal>
+      <BaseMenu.Target>
+        <BaseUnstyledButton
+          aria-label={`Theme: ${selected.label}`}
+          p={4}
+          style={{ borderRadius: 'var(--mantine-radius-default)', display: 'flex' }}
+          title={selected.label}
+        >
+          <ThemeSwatches config={selected.config} />
+        </BaseUnstyledButton>
+      </BaseMenu.Target>
+      <BaseMenu.Dropdown>
+        {options.map((option) => (
+          <BaseMenu.Item
+            key={option.value}
+            leftSection={<ThemeSwatches config={option.config} />}
+            onClick={() => onChange(option.value)}
+            rightSection={
+              option.value === selected.value ? (
+                <IconCheck aria-hidden color="var(--mantine-color-dimmed)" size={15} stroke={1.75} />
+              ) : null
+            }
+          >
+            {option.label}
+          </BaseMenu.Item>
+        ))}
+      </BaseMenu.Dropdown>
+    </BaseMenu>
   );
 }

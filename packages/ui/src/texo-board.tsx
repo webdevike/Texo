@@ -31,9 +31,9 @@ function Card<T extends { id: string }>({ card, renderCard, onOpen }: { card: T;
       ref={setNodeRef}
       style={{
         border: '1px solid var(--mantine-color-default-border)',
-        borderRadius: 'var(--mantine-radius-sm)',
-        background: 'var(--mantine-color-body)',
-        padding: 8,
+        borderRadius: 'var(--mantine-radius-default)',
+        background: 'var(--texo-color-card)',
+        padding: 'var(--mantine-spacing-xs)',
         cursor: 'grab',
         opacity: isDragging ? 0.4 : 1,
         transform: transform ? `translate(${transform.x}px, ${transform.y}px)` : undefined,
@@ -51,19 +51,19 @@ function Column<T extends { id: string }>({ column, renderCard, onOpen }: { colu
   return (
     <BaseStack
       data-column={column.id}
-      gap={6}
+      gap="xs"
       ref={setNodeRef}
       style={{
         minWidth: 240,
         flex: 1,
-        padding: 8,
-        borderRadius: 'var(--mantine-radius-md)',
-        background: isOver ? 'var(--mantine-color-default-hover)' : 'var(--mantine-color-default)',
+        padding: 'var(--mantine-spacing-xs)',
+        borderRadius: 'var(--mantine-radius-default)',
+        background: isOver ? 'var(--mantine-color-default-hover)' : 'var(--texo-color-surface)',
         overflowY: 'auto',
         height: '100%',
       }}
     >
-      <BaseGroup gap={6} px={4}>
+      <BaseGroup gap="xs" px="calc(var(--mantine-spacing-xs) / 2)">
         <BaseText fw={600} size="sm">{column.label}</BaseText>
         <BaseText c="dimmed" size="xs" data-count>{column.total}</BaseText>
       </BaseGroup>

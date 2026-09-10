@@ -14,6 +14,9 @@ import type {
   ChatStatus,
   ChatThread,
 } from '../src/app/chat-protocol';
+import type { AgentContextSnapshot } from '../src/context/agent-context';
+import { formatAgentContextPrompt } from '../src/context/agent-context-prompt';
+import { loadAppConfig } from './app-config';
 
 /**
  * Chat threads for the design workspace. Each thread is its own `omp --mode rpc`
@@ -30,6 +33,7 @@ const ompBinary = (() => {
   const bun = resolve(homedir(), '.bun/bin/omp');
   return existsSync(bun) ? bun : 'omp';
 })();
+
 
 type ThreadsFile = { version: 1; threads: ChatThread[] };
 
@@ -317,9 +321,18 @@ class Thread {
     }
   }
 
-  send(text: string) {
+  send(text: string, context?: AgentContextSnapshot | null) {
+    const snapshot = context == null ? context : structuredClone(context);
+    const message =
+      snapshot == null ? text : formatAgentContextPrompt(snapshot, text);
     this.start();
-    this.upsert({ id: randomUUID(), kind: 'user', text, at: Date.now() });
+    this.upsert({
+      id: randomUUID(),
+      kind: 'user',
+      text,
+      at: Date.now(),
+      ...(snapshot === undefined ? {} : { context: snapshot }),
+    });
     if (!this.meta.title) {
       this.meta.title = text.length > 60 ? `${text.slice(0, 57)}...` : text;
       this.host.saveThreads();
@@ -327,7 +340,7 @@ class Thread {
     const frame = {
       id: randomUUID(),
       type: 'prompt',
-      message: text,
+      message,
       ...(this.status === 'streaming' ? { streamingBehavior: 'followUp' } : {}),
     };
     if (this.status === 'starting') {
@@ -440,7 +453,7 @@ class Host {
         return;
       }
       case 'send':
-        this.find(message.threadId)?.send(message.text);
+        this.find(message.threadId)?.send(message.text, message.context);
         return;
       case 'abort':
         this.find(message.threadId)?.abort();
@@ -474,7 +487,8 @@ export function chatThreads(): Plugin {
     apply: 'serve',
     configureServer(server) {
       const root = server.config.root;
-      const host = new Host(root, resolve(root, 'project/threads'), server);
+      const app = loadAppConfig(root);
+      const host = new Host(app?.root ?? root, resolve(root, 'project/threads'), server);
       const loaded = host.load();
       server.ws.on(EVENT, (data: ChatClientMessage, client) => {
         void loaded.then(() => host.handle(data, client));

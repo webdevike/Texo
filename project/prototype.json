@@ -1,4 +1,19 @@
 {
   "version": 1,
-  "comments": []
+  "comments": [
+    {
+      "id": "5d5d9f25-b1ba-4936-8ab1-0283b4d4d429",
+      "page": "dashboard",
+      "target": "page.content.charts.pipeline-chart",
+      "targetLabel": "Pipeline by week",
+      "record": null,
+      "recordLabel": null,
+      "anchor": {
+        "x": 0.46977124183006536,
+        "y": 0.1996711540437776
+      },
+      "body": "the the stacked bar chart could use some space between the stacked ones",
+      "resolved": false
+    }
+  ]
 }

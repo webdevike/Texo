@@ -1,16 +1,16 @@
 .dock {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: calc(var(--mantine-spacing-xs) / 2);
   min-width: 0;
   max-width: 100%;
 }
 
 .chip {
   max-width: 220px;
-  padding: 3px 10px;
+  padding: calc(var(--mantine-spacing-xs) / 2) var(--mantine-spacing-sm);
   border: 0;
-  border-radius: var(--mantine-radius-sm);
+  border-radius: var(--mantine-radius-default);
   background: transparent;
   color: var(--mantine-color-dimmed);
   font: inherit;
@@ -38,22 +38,22 @@
 
 .window {
   position: fixed;
-  right: 16px;
-  bottom: 44px;
+  right: var(--mantine-spacing-md);
+  bottom: calc(var(--mantine-spacing-xl) + var(--mantine-spacing-md));
   z-index: 150;
   display: flex;
   flex-direction: column;
-  width: min(440px, calc(100vw - 32px));
-  height: min(640px, calc(100vh - 96px));
-  border-radius: var(--mantine-radius-md);
+  width: min(440px, calc(100vw - var(--mantine-spacing-md) * 2));
+  height: min(640px, calc(100vh - var(--mantine-spacing-xl) * 3));
+  border-radius: var(--mantine-radius-default);
   background: var(--mantine-color-body);
   box-shadow: var(--mantine-shadow-lg);
   overflow: hidden;
 }
 
 .window[data-expanded] {
-  width: min(760px, calc(100vw - 32px));
-  height: calc(100vh - 96px);
+  width: min(760px, calc(100vw - var(--mantine-spacing-md) * 2));
+  height: calc(100vh - var(--mantine-spacing-xl) * 3);
 }
 
 .windowHeader {
@@ -61,7 +61,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--mantine-spacing-xs);
-  padding: 6px 6px 6px 12px;
+  padding: var(--mantine-spacing-xs) var(--mantine-spacing-sm);
   border-bottom: 1px solid var(--mantine-color-default-border);
 }
 
@@ -86,14 +86,8 @@
   flex-shrink: 0;
 }
 
-.composer {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.composerSlot {
   margin: 0 var(--mantine-spacing-xs) var(--mantine-spacing-xs);
-  padding: 6px 8px 8px;
-  border: 1px solid var(--mantine-color-default-border);
-  border-radius: var(--mantine-radius-md);
 }
 
 .text {
@@ -104,16 +98,16 @@
 .user {
   align-self: flex-end;
   max-width: 92%;
-  padding: 6px 10px;
-  border-radius: var(--mantine-radius-md);
+  padding: var(--mantine-spacing-xs) var(--mantine-spacing-sm);
+  border-radius: var(--mantine-radius-default);
   background: var(--mantine-primary-color-light);
 }
 
 .assistant {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding-inline: 2px;
+  gap: calc(var(--mantine-spacing-xs) / 2);
+  padding-inline: calc(var(--mantine-spacing-xs) / 2);
 }
 
 .toolBadge {
@@ -127,9 +121,9 @@
 }
 
 .toolTitle {
-  margin-left: 6px;
+  margin-left: var(--mantine-spacing-xs);
   font-weight: 400;
-  opacity: 0.75;
+  color: var(--mantine-color-dimmed);
 }
 
 .toolDropdown {
@@ -140,14 +134,14 @@
   max-height: 60vh;
   overflow: auto;
   border: 1px solid var(--mantine-color-default-border);
-  border-radius: var(--mantine-radius-sm);
-  font-size: 11px;
+  border-radius: var(--mantine-radius-default);
+  font-size: var(--mantine-font-size-xs);
 }
 
 .toolOutput pre,
 .toolOutput code {
-  font-size: 11px;
-  line-height: 1.45;
+  font-size: var(--mantine-font-size-xs);
+  line-height: var(--mantine-line-height);
 }
 
 .thinkingItem {
@@ -166,19 +160,19 @@
 }
 
 .thinkingLabel {
-  padding: 2px 0;
+  padding: calc(var(--mantine-spacing-xs) / 2) 0;
 }
 
 .thinkingContent {
-  padding: 2px 0 4px;
+  padding: calc(var(--mantine-spacing-xs) / 2) 0 var(--mantine-spacing-xs);
 }
 
 .ask {
   padding: var(--mantine-spacing-xs);
   border: 1px solid var(--mantine-primary-color-filled);
-  border-radius: var(--mantine-radius-sm);
+  border-radius: var(--mantine-radius-default);
 }
 
 .notice {
-  padding-inline: 2px;
+  padding-inline: calc(var(--mantine-spacing-xs) / 2);
 }

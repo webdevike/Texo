@@ -81,7 +81,7 @@ export function TexoPanel({
       style={{
         border: contained ? '1px solid var(--mantine-color-default-border)' : undefined,
         borderTop: '1px solid var(--mantine-color-default-border)',
-        borderRadius: contained ? 'var(--mantine-radius-md) var(--mantine-radius-md) 0 0' : undefined,
+        borderRadius: contained ? 'var(--mantine-radius-default) var(--mantine-radius-default) 0 0' : undefined,
         overflow: 'visible',
         pointerEvents: opened ? 'auto' : 'none',
         transform: opened

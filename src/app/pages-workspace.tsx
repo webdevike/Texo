@@ -9,9 +9,9 @@ import classes from './pages-workspace.module.css';
 /** The inset frame showing the consumer app's page, with the requests column beside it. */
 export function PagesWorkspace() {
   const { pageId = null } = useParams();
-  const { framePage, setFrame, show } = usePreview();
+  const { pages, framePage, setFrame, show } = usePreview();
   const { panelOpen } = usePrototype();
-  const [src] = useState(() => previewUrl(pageId));
+  const [src] = useState(() => previewUrl(pages.find((page) => page.id === pageId)));
 
   // Admin route changed (sidebar click): steer the frame without reloading it.
   useEffect(() => {

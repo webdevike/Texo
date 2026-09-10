@@ -1,5 +1,7 @@
 /** Wire contract between the chat panel and tools/chat-plugin.ts (Vite ws event `texo:chat`). */
 
+import type { AgentContextSnapshot } from '../context/agent-context';
+
 export type ChatThread = {
   id: string;
   title: string;
@@ -9,8 +11,16 @@ export type ChatThread = {
 
 export type ChatStatus = 'idle' | 'starting' | 'ready' | 'streaming' | 'error';
 
+
 export type ChatItem =
-  | { id: string; kind: 'user'; text: string; at: number }
+  | {
+      id: string;
+      kind: 'user';
+      text: string;
+      at: number;
+      /** Null records an intentionally cleared attachment; absent means legacy history. */
+      context?: AgentContextSnapshot | null;
+    }
   | {
       id: string;
       kind: 'assistant';
@@ -52,7 +62,12 @@ export type ChatClientMessage =
   | { op: 'list' }
   | { op: 'create' }
   | { op: 'open'; threadId: string }
-  | { op: 'send'; threadId: string; text: string }
+  | {
+      op: 'send';
+      threadId: string;
+      text: string;
+      context?: AgentContextSnapshot | null;
+    }
   | { op: 'abort'; threadId: string }
   | { op: 'answer'; threadId: string; id: string; answer: ChatAnswer }
   | { op: 'remove'; threadId: string };

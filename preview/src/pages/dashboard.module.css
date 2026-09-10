@@ -88,7 +88,7 @@
 
 .track {
   height: 6px;
-  border-radius: 3px;
+  border-radius: var(--mantine-radius-default);
   background: var(--mantine-color-default-border);
   overflow: hidden;
 }

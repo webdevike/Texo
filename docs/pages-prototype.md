@@ -4,6 +4,13 @@ Route: `/pages/:pageId`. The page itself runs in the consumer app (`preview/`, i
 sidebar, page tabs in the top row, a toolbar with **Prototype** on the right, and the real
 page rendered inset below.
 
+## Framing an external app
+`project/app.json` (`{ "url", "root" }`) replaces the bundled consumer app: `/preview/` is
+proxied to `url` (the app must serve itself under `/preview/`, e.g. Vite `base`) and chat
+agents run in `root`. The app mounts `useTexoBridge` from `@texo/ui` with its page list
+(`id`, `label`, `path`, `sourcePath` relative to `root`) and `TexoThemeSync` to follow the
+admin's saved theme. Without the file, `preview/` runs on :4210 as before.
+
 ## Prototype mode
 - **Off**: the page runs as built (row click opens the details drawer).
 - **On**: the page is inert. Hovering highlights the nearest `data-target` element and

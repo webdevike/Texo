@@ -16,3 +16,7 @@ export { theme } from './theme';
 export * from './texo-data-table';
 export * from './texo-filter-bar';
 export * from './texo-board';
+export * from './texo-chat-composer';
+export * from './texo-markdown';
+export * from './texo-bridge';
+export * from './texo-theme-sync';

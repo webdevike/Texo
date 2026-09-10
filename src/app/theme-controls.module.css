@@ -55,7 +55,7 @@
   .properties :global(.mantine-InputWrapper-root),
   .properties :global(.mantine-Switch-root) {
     grid-template-columns: 1fr;
-    row-gap: 6px;
+    row-gap: calc(var(--mantine-spacing-sm) / 2);
   }
 
   .properties :global(.mantine-Input-wrapper),

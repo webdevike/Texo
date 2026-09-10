@@ -96,24 +96,24 @@ function ControlCategory({
       variant="unstyled"
       styles={{
         chevron: {
-          marginInlineEnd: 4,
+          marginInlineEnd: 'calc(var(--mantine-spacing-xs) / 2)',
           minWidth: 12,
           width: 12,
         },
         control: {
           background: 'var(--texo-color-muted)',
           border: '1px solid var(--mantine-color-default-border)',
-          borderRadius: 'var(--mantine-radius-sm)',
+          borderRadius: 'var(--mantine-radius-default)',
           color: 'var(--mantine-color-text)',
-          fontSize: 11,
+          fontSize: 'var(--mantine-font-size-xs)',
           fontWeight: 600,
           minHeight: 26,
-          padding: '2px 8px',
+          padding: 'calc(var(--mantine-spacing-xs) / 5) var(--mantine-spacing-xs)',
           width: 'fit-content',
         },
         item: { border: 0 },
         label: { lineHeight: 1, padding: 0 },
-        panel: { paddingBottom: 10 },
+        panel: { paddingBottom: 'var(--mantine-spacing-xs)' },
       }}
     >
       <BaseAccordion.Item value={value}>
@@ -160,24 +160,24 @@ function SemanticCategories() {
       variant="unstyled"
       styles={{
         chevron: {
-          marginInlineEnd: 4,
+          marginInlineEnd: 'calc(var(--mantine-spacing-xs) / 2)',
           minWidth: 12,
           width: 12,
         },
         control: {
           background: 'var(--texo-color-muted)',
           border: '1px solid var(--mantine-color-default-border)',
-          borderRadius: 'var(--mantine-radius-sm)',
+          borderRadius: 'var(--mantine-radius-default)',
           color: 'var(--mantine-color-text)',
-          fontSize: 11,
+          fontSize: 'var(--mantine-font-size-xs)',
           fontWeight: 600,
           minHeight: 26,
-          padding: '2px 8px',
+          padding: 'calc(var(--mantine-spacing-xs) / 5) var(--mantine-spacing-xs)',
           width: 'fit-content',
         },
         item: { border: 0, marginBottom: 'var(--mantine-spacing-xs)' },
         label: { lineHeight: 1, padding: 0 },
-        panel: { paddingBottom: 10 },
+        panel: { paddingBottom: 'var(--mantine-spacing-xs)' },
       }}
     >
       {semanticCategories.map((category) => (

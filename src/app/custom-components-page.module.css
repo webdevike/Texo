@@ -13,7 +13,7 @@
   min-height: 220px;
   place-items: center;
   padding: var(--mantine-spacing-md);
-  border-radius: var(--mantine-radius-sm);
+  border-radius: var(--mantine-radius-default);
   background: var(--texo-color-surface);
 }
 
@@ -44,7 +44,7 @@
   place-items: center;
   padding: var(--mantine-spacing-xl);
   border: 1px solid var(--mantine-color-default-border);
-  border-radius: var(--mantine-radius-md);
+  border-radius: var(--mantine-radius-default);
   background: var(--texo-color-surface);
 }
 
@@ -60,7 +60,7 @@
   margin-block: var(--mantine-spacing-xs);
   overflow: hidden;
   border: 1px solid transparent;
-  border-radius: var(--mantine-radius-md);
+  border-radius: var(--mantine-radius-default);
   background: var(--texo-color-card);
   opacity: 0;
   transform: translateX(16px);
@@ -111,7 +111,7 @@
     max-height: 0;
     margin-block: var(--mantine-spacing-xs) 0;
     border: 1px solid transparent;
-    border-radius: var(--mantine-radius-md) var(--mantine-radius-md) 0 0;
+    border-radius: var(--mantine-radius-default) var(--mantine-radius-default) 0 0;
     transform: translateY(16px);
   }
 

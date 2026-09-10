@@ -32,7 +32,7 @@ export function TexoNavItem({ active, icon, label, onClick, href }: TexoNavItemP
           height: 'var(--texo-sidebar-row-height)',
           minHeight: 'var(--texo-sidebar-row-height)',
           paddingBlock: 0,
-          borderRadius: 'var(--mantine-radius-sm)',
+          borderRadius: 'var(--mantine-radius-default)',
           ...(active
             ? {
                 background: 'var(--texo-sidebar-active-background)',

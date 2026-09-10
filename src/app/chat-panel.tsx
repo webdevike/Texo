@@ -1,11 +1,9 @@
 import {
-  IconArrowUp,
   IconArrowsMaximize,
   IconArrowsMinimize,
   IconDots,
   IconHistory,
   IconMinus,
-  IconPlayerStop,
   IconSparkles,
   IconTrash,
   IconX,
@@ -23,11 +21,14 @@ import {
   BasePopover,
   BaseStack,
   BaseText,
-  BaseTextarea,
   BaseTextInput,
-  BaseTooltip,
+  TexoChatComposer,
+  TexoMarkdown,
 } from '@texo/ui';
 
+import type { AgentContextSnapshot } from '../context/agent-context';
+import { useAgentContext } from '../context/agent-context-provider';
+import { AgentContextInspector } from './agent-context-inspector';
 import type { ChatItem } from './chat-protocol';
 import { useChat } from './use-chat';
 import classes from './chat-panel.module.css';
@@ -40,6 +41,7 @@ const statusLabel = {
   error: 'Error',
 } as const;
 
+
 /**
  * Linear-style agent dock: a small fixed footer at the bottom right with one
  * chip per open thread, an Ask Agent button and thread history. A chip opens
@@ -51,6 +53,12 @@ export function ChatDock() {
   const [shown, setShown] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const active = chat.threads.find((thread) => thread.id === chat.activeId);
+  const { current, capture } = useAgentContext();
+  const [inspection, setInspection] = useState<
+    | { mode: 'live' }
+    | { mode: 'history'; snapshot: AgentContextSnapshot }
+    | null
+  >(null);
 
   // A newly created or chosen thread becomes a chip and shows its window.
   useEffect(() => {
@@ -141,7 +149,15 @@ export function ChatDock() {
               </BaseActionIcon>
             </BaseGroup>
           </div>
-          <ChatThreadView />
+          <ChatThreadView
+            context={current}
+            capture={capture}
+            onInspectCurrent={() => {
+              capture();
+              setInspection({ mode: 'live' });
+            }}
+            onInspectSaved={(snapshot) => setInspection({ mode: 'history', snapshot })}
+          />
         </div>
       )}
       <div className={classes.dock} role="toolbar" aria-label="Agent threads">
@@ -206,6 +222,13 @@ export function ChatDock() {
           </BaseMenu.Dropdown>
         </BaseMenu>
       </div>
+      {inspection && (
+        <AgentContextInspector
+          historical={inspection.mode === 'history'}
+          onClose={() => setInspection(null)}
+          snapshot={inspection.mode === 'live' ? current : inspection.snapshot}
+        />
+      )}
     </>
   );
 }
@@ -225,7 +248,12 @@ function Status() {
   );
 }
 
-function ChatThreadView() {
+function ChatThreadView({ context, capture, onInspectCurrent, onInspectSaved }: {
+  context: AgentContextSnapshot;
+  capture: () => AgentContextSnapshot;
+  onInspectCurrent: () => void;
+  onInspectSaved: (snapshot: AgentContextSnapshot) => void;
+}) {
   const chat = useChat();
   const [draft, setDraft] = useState('');
   const listRef = useRef<HTMLDivElement>(null);
@@ -240,67 +268,43 @@ function ChatThreadView() {
   const submit = () => {
     const text = draft.trim();
     if (!text) return;
-    chat.send(text);
+    chat.send(text, chat.contextEnabled ? capture() : null);
     setDraft('');
   };
 
   return (
     <div className={classes.root}>
       <div className={classes.list} ref={listRef}>
-        {items.length === 0 && (
-          <BaseText c="dimmed" size="sm">
-            Describe the page you want. It is built from the Texo UI system and
-            shows up as a page tab.
-          </BaseText>
-        )}
         {items.map((item) => (
-          <Item key={item.id} item={item} />
+          <Item key={item.id} item={item} onInspectContext={onInspectSaved} />
         ))}
       </div>
-      <div className={classes.composer}>
-        <BaseTextarea
-          aria-label="Message"
-          autosize
-          minRows={1}
-          maxRows={8}
-          onChange={(event) => setDraft(event.currentTarget.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' && !event.shiftKey) {
-              event.preventDefault();
-              submit();
-            }
-          }}
-          placeholder={items.length ? 'Reply...' : 'Ask for a page...'}
-          value={draft}
-          variant="unstyled"
-        />
-        <BaseGroup gap="xs" justify="flex-end">
-          {status === 'streaming' && (
-            <BaseButton
-              leftSection={<IconPlayerStop size={14} />}
-              onClick={chat.abort}
-              size="compact-xs"
-              variant="default"
-            >
-              Stop
-            </BaseButton>
-          )}
-          <BaseActionIcon
-            aria-label="Send"
-            disabled={!draft.trim()}
-            onClick={submit}
-            size="sm"
-            variant="filled"
-          >
-            <IconArrowUp size={14} />
-          </BaseActionIcon>
-        </BaseGroup>
-      </div>
+      <TexoChatComposer
+        className={classes.composerSlot}
+        context={chat.contextEnabled ? {
+          label: context.label,
+          source: context.preview?.page.status === 'ready'
+            ? context.preview.page.value.sourcePath
+            : undefined,
+        } : null}
+        onChange={setDraft}
+        onInspectContext={onInspectCurrent}
+        onClearContext={() => chat.setContextEnabled(false)}
+        onAttachContext={() => chat.setContextEnabled(true)}
+        onStop={chat.abort}
+        onSubmit={submit}
+        placeholder={items.length ? 'Reply...' : 'Ask Texo...'}
+        streaming={status === 'streaming'}
+        value={draft}
+      />
     </div>
   );
 }
 
-function Item({ item }: { item: ChatItem }) {
+function Item({ item, onInspectContext }: {
+  item: ChatItem;
+  onInspectContext: (snapshot: AgentContextSnapshot) => void;
+}) {
   switch (item.kind) {
     case 'user':
       return (
@@ -308,6 +312,22 @@ function Item({ item }: { item: ChatItem }) {
           <BaseText size="sm" className={classes.text}>
             {item.text}
           </BaseText>
+          {item.context ? (
+            <BaseButton
+              aria-label="Inspect message context"
+              leftSection={<IconSparkles aria-hidden size={12} />}
+              onClick={() => item.context && onInspectContext(item.context)}
+              size="compact-xs"
+              type="button"
+              variant="subtle"
+            >
+              Context
+            </BaseButton>
+          ) : (
+            <BaseText c="dimmed" size="xs">
+              {item.context === null ? 'No context attached' : 'Context not recorded'}
+            </BaseText>
+          )}
         </div>
       );
     case 'assistant':
@@ -329,17 +349,15 @@ function Item({ item }: { item: ChatItem }) {
                   {item.text || item.done ? 'Thinking' : 'Thinking...'}
                 </BaseAccordion.Control>
                 <BaseAccordion.Panel>
-                  <BaseText c="dimmed" size="xs" className={classes.text}>
+                  <TexoMarkdown c="dimmed" size="xs">
                     {item.thinking}
-                  </BaseText>
+                  </TexoMarkdown>
                 </BaseAccordion.Panel>
               </BaseAccordion.Item>
             </BaseAccordion>
           )}
           {item.text && (
-            <BaseText size="sm" className={classes.text}>
-              {item.text}
-            </BaseText>
+            <TexoMarkdown>{item.text}</TexoMarkdown>
           )}
         </div>
       );

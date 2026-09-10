@@ -47,6 +47,7 @@ import { PrototypePanel, PrototypeProvider, usePrototype } from './prototype';
 import { ChatDock } from './chat-panel';
 import { ChatProvider } from './use-chat';
 import { componentLibrary, projectComponents } from '../extensions/registry';
+import { AgentContextProvider } from '../context/agent-context-provider';
 import { SideNav } from './side-nav';
 import styles from './app.module.css';
 
@@ -309,6 +310,35 @@ function ComponentPreview({
       );
     case 'BaseTree':
       return <BaseTree data={treeData} />;
+    case 'BaseBurger':
+      return <BaseComponents.BaseBurger aria-label="Menu" />;
+    case 'BaseGrid':
+      return (
+        <BaseComponents.BaseGrid>
+          <BaseComponents.BaseGrid.Col span={6}>First</BaseComponents.BaseGrid.Col>
+          <BaseComponents.BaseGrid.Col span={6}>Second</BaseComponents.BaseGrid.Col>
+        </BaseComponents.BaseGrid>
+      );
+    case 'BaseHoverCard':
+      return (
+        <BaseComponents.BaseHoverCard>
+          <BaseComponents.BaseHoverCard.Target>
+            <BaseButton>Hover card</BaseButton>
+          </BaseComponents.BaseHoverCard.Target>
+          <BaseComponents.BaseHoverCard.Dropdown>Details</BaseComponents.BaseHoverCard.Dropdown>
+        </BaseComponents.BaseHoverCard>
+      );
+    case 'BaseImage':
+      return <BaseComponents.BaseImage alt="Image" h={80} w={120} src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'%3E%3Crect width='3' height='2' fill='%23ccc'/%3E%3C/svg%3E" />;
+    case 'BasePagination':
+      return <BaseComponents.BasePagination total={5} />;
+    case 'BaseTimeline':
+      return (
+        <BaseComponents.BaseTimeline active={0}>
+          <BaseComponents.BaseTimeline.Item title="First">Step one</BaseComponents.BaseTimeline.Item>
+          <BaseComponents.BaseTimeline.Item title="Second">Step two</BaseComponents.BaseTimeline.Item>
+        </BaseComponents.BaseTimeline>
+      );
     default: {
       // Input-like aliases render a void <input>; children would crash React.
       const inputLike =
@@ -358,7 +388,12 @@ function ThemePage() {
 
 export function App() {
   const { pathname } = useLocation();
+  const customId = pathname.startsWith('/custom/') ? pathname.slice('/custom/'.length) : null;
+  const label = (customId ? projectComponents[customId as keyof typeof projectComponents]?.name : undefined)
+    ?? navigationItems.find((item) => item.path === pathname)?.label
+    ?? (pathname.startsWith('/pages/') ? 'Page preview' : 'Texo workspace');
   return (
+    <AgentContextProvider route={pathname} label={label}>
     <PrototypeProvider page={pageIdFromPath(pathname)}>
       <PreviewProvider>
         <ChatProvider>
@@ -366,6 +401,7 @@ export function App() {
         </ChatProvider>
       </PreviewProvider>
     </PrototypeProvider>
+    </AgentContextProvider>
   );
 }
 
@@ -410,16 +446,16 @@ function Workspace() {
 
   const compactPillTabs = {
     tab: {
-      borderRadius: 'var(--mantine-radius-xl)',
+      borderRadius: 'var(--mantine-radius-default)',
       fontSize: 'var(--mantine-font-size-xs)',
-      padding: '4px 10px',
+      padding: 'calc(var(--mantine-spacing-xs) / 2) var(--mantine-spacing-xs)',
       whiteSpace: 'nowrap',
     },
   };
 
   const pillScrollerStyles = {
     content: {
-      gap: 4,
+      gap: 'calc(var(--mantine-spacing-xs) / 2)',
     },
   };
 

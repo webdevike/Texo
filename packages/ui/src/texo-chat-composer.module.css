@@ -1,0 +1,102 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  min-width: 0;
+  padding: calc(var(--mantine-spacing-xs) / 2);
+  border-radius: calc(var(--mantine-radius-default) + var(--mantine-spacing-xs) / 2);
+  background: var(--texo-chat-context-background);
+  color: var(--mantine-color-text);
+  font-family: var(--mantine-font-family);
+  font-size: var(--mantine-font-size-sm);
+  line-height: var(--mantine-line-height);
+}
+
+.root:not([data-context]) {
+  padding: 0;
+  background: transparent;
+}
+
+.context {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-xs);
+  min-width: 0;
+  padding: calc(var(--mantine-spacing-xs) / 2);
+  color: var(--mantine-color-dimmed);
+}
+
+.contextButton,
+.metadata {
+  flex: 1;
+  min-width: 0;
+}
+
+.contextButton {
+  padding: 0;
+  justify-content: flex-start;
+  color: var(--mantine-color-dimmed);
+}
+
+.contextInner {
+  justify-content: flex-start;
+}
+
+.label {
+  min-width: 0;
+  text-align: start;
+}
+
+.metadata > svg {
+  flex-shrink: 0;
+}
+
+.clear {
+  flex-shrink: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.context:hover .clear,
+.context:focus-within .clear {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .clear {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: var(--mantine-spacing-xs);
+  padding: var(--mantine-spacing-xs);
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-default);
+  background: var(--texo-color-input, var(--mantine-color-body));
+  box-shadow: var(--texo-control-shadow, none);
+}
+
+.field:focus-within {
+  border-color: var(--mantine-primary-color-filled);
+}
+
+.toolbar {
+  min-width: 0;
+}
+
+/* Only the field owns input chrome, including when the global input theme changes. */
+.root .input {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  font: inherit;
+}

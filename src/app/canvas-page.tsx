@@ -20,6 +20,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type Dispatch,
@@ -28,7 +29,7 @@ import {
   type RefObject,
   type SetStateAction,
 } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   BaseButton,
   BaseGroup,
@@ -53,6 +54,8 @@ import {
 } from './use-project-document';
 import '@xyflow/react/dist/style.css';
 import classes from './canvas-page.module.css';
+import type { AgentCanvasContext, AgentTarget } from '../context/agent-context';
+import { useAgentContextSource } from '../context/agent-context-provider';
 
 const COMPONENT_TRANSFER = 'application/x-texo-component';
 type CanvasMode = 'design' | 'annotate' | 'preview';
@@ -93,13 +96,71 @@ export function CanvasProvider({
   children: ReactNode;
 }) {
   const file = useProjectDocument(canvasFile);
-  const [selectedId, select] = useState<string | null>(null);
+  const { pathname } = useLocation();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mode, setModeState] = useState<CanvasMode>('design');
   const [selectedNoteId, selectNote] = useState<string | null>(null);
   const [draft, setDraft] = useState<AnnotationTarget | null>(null);
   const [notesOpened, setNotesOpened] = useState(false);
   const flow = useRef<ReactFlowInstance<ComponentNode> | null>(null);
   const surface = useRef<HTMLDivElement | null>(null);
+  const select = useCallback<Dispatch<SetStateAction<string | null>>>((next) => {
+    setSelectedId(next);
+    selectNote(null);
+    setDraft(null);
+  }, []);
+  useEffect(() => {
+    if (pathname !== '/canvas') {
+      setSelectedId(null);
+      selectNote(null);
+      setDraft(null);
+    }
+  }, [pathname]);
+  const source = useMemo<AgentCanvasContext>(() => {
+    const unavailable = file.error
+      ? { status: 'unavailable' as const, reason: file.error }
+      : !file.document
+        ? { status: 'loading' as const, reason: 'Loading the canvas document.' }
+        : null;
+    const instance = pathname === '/canvas' && mode !== 'preview'
+      ? file.document?.instances.find((item) => item.id === selectedId)
+      : undefined;
+    const note = mode === 'annotate' && draft
+      ? draft
+      : file.document?.annotations.find((item) => item.id === selectedNoteId);
+    const target = (annotation: AnnotationTarget): AgentTarget => {
+      const owner = file.document?.instances.find((item) => item.id === annotation.instanceId);
+      const label = owner ? registry[owner.componentId]?.name ?? owner.componentId : annotation.instanceId;
+      return {
+        key: annotation.target ?? annotation.instanceId,
+        label: annotation.target ?? label,
+        record: annotation.instanceId,
+        recordLabel: label,
+      };
+    };
+    return {
+      mode,
+      selection: unavailable ?? {
+        status: 'ready',
+        value: instance ? {
+          instanceId: instance.id,
+          componentId: instance.componentId,
+          label: registry[instance.componentId]?.name ?? instance.componentId,
+          props: instance.props,
+          ...(note?.instanceId === instance.id ? { target: target(note) } : {}),
+        } : null,
+      },
+      requests: unavailable ?? {
+        status: 'ready',
+        value: (file.document?.annotations ?? [])
+          .filter((annotation) => !annotation.resolved)
+          .map((annotation) => ({
+            id: annotation.id, body: annotation.body, target: target(annotation),
+          })),
+      },
+    };
+  }, [pathname, mode, file.document, file.error, selectedId, selectedNoteId, draft, registry]);
+  useAgentContextSource('canvas', source);
 
   const insert = (componentId: string, position?: CanvasPoint) => {
     if (
@@ -138,7 +199,7 @@ export function CanvasProvider({
     selectNote(id);
     setDraft(null);
     setNotesOpened(true);
-    select(note.instanceId);
+    setSelectedId(note.instanceId);
     if (
       file.document?.instances.some(
         (instance) => instance.id === note.instanceId,
@@ -159,7 +220,7 @@ export function CanvasProvider({
     if (mode !== 'annotate' || !file.document) return;
     setDraft(target);
     selectNote(null);
-    select(target.instanceId);
+    setSelectedId(target.instanceId);
     setNotesOpened(true);
   };
 
@@ -455,6 +516,9 @@ export function CanvasPage() {
         (change) => change.type === 'select' && change.selected,
       );
       if (selection?.type === 'select') select(selection.id);
+      else if (changes.some((change) =>
+        change.type === 'select' && change.id === selectedId && !change.selected,
+      )) select(null);
       if (designing) {
         const positions = changes.filter(
           (change) =>
@@ -474,7 +538,7 @@ export function CanvasPage() {
           }));
       }
     },
-    [select, designing, update],
+    [select, selectedId, designing, update],
   );
 
   const allowDrop = (event: DragEvent<HTMLElement>) => {

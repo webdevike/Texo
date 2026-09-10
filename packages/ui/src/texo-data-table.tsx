@@ -15,6 +15,7 @@ import {
 import { BaseBox, BaseCheckbox, BaseText } from './components';
 import { useTexoTheme } from './texo-theme-provider';
 import classes from './texo-data-table.module.css';
+import skin from './texo-table-skin.module.css';
 
 /**
  * Virtualized, sortable, keyboard-navigable table for large lists (10k+ rows).
@@ -141,7 +142,7 @@ const TableRow = memo(function TableRow<T extends { id: string }>({
     <div
       aria-rowindex={index + 1}
       aria-selected={selectable ? selected : undefined}
-      className={classes.row}
+      className={`${classes.row} ${skin.cell}`}
       data-even={index % 2 === 1 ? '' : undefined}
       data-focused={focused ? '' : undefined}
       data-index={index}
@@ -158,7 +159,7 @@ const TableRow = memo(function TableRow<T extends { id: string }>({
     >
       {selectable && (
         <div
-          className={`${classes.cell} ${classes.selectionCell}`}
+          className={`${classes.cell} ${skin.gridCell} ${skin.tableCell} ${skin.selectionCell}`}
           onClick={(e) => e.stopPropagation()}
           role="gridcell"
         >
@@ -172,7 +173,7 @@ const TableRow = memo(function TableRow<T extends { id: string }>({
       )}
       {columns.map((column) => (
         <div
-          className={classes.cell}
+          className={`${classes.cell} ${skin.gridCell} ${skin.tableCell}`}
           data-align={column.align}
           key={column.key}
           role="gridcell"
@@ -340,7 +341,7 @@ export function TexoDataTable<T extends { id: string }>({
     <BaseBox
       aria-busy={loading || undefined}
       aria-rowcount={rows.length}
-      className={classes.root}
+      className={`${classes.root} ${skin.shell}`}
       data-borders={config.table.borders}
       data-hover={config.table.hover || undefined}
       data-striped={config.table.striped || undefined}
@@ -351,13 +352,13 @@ export function TexoDataTable<T extends { id: string }>({
     >
       <div className={classes.viewport} ref={viewportRef}>
         <div
-          className={classes.header}
+          className={`${classes.header} ${skin.header}`}
           data-sticky={config.table.stickyHeader || undefined}
           role="row"
         >
           {selectable && (
             <div
-              className={`${classes.headerCell} ${classes.selectionCell}`}
+              className={`${classes.headerCell} ${skin.gridCell} ${skin.tableCell} ${skin.selectionCell}`}
               role="columnheader"
             >
               <BaseCheckbox
@@ -383,7 +384,7 @@ export function TexoDataTable<T extends { id: string }>({
                       : 'descending'
                     : 'none'
                 }
-                className={classes.headerCell}
+                className={`${classes.headerCell} ${skin.gridCell} ${skin.tableCell}`}
                 data-align={column.align}
                 data-sorted={active ? '' : undefined}
                 key={column.key}

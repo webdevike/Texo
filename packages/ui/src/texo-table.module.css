@@ -1,29 +1,11 @@
 .viewport {
   width: 100%;
   overflow: auto;
-  border: 1px solid var(--mantine-color-default-border);
-  border-radius: var(--mantine-radius-md);
 }
 
 .table {
   min-width: 760px;
-  background: var(--texo-color-card);
 }
-
-.table th {
-  height: var(--texo-table-row-height);
-  background: var(--texo-table-header-background);
-  color: var(--mantine-color-dimmed);
-  font-size: var(--mantine-font-size-xs);
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.table td {
-  height: var(--texo-table-row-height);
-  white-space: nowrap;
-}
-
 .table[data-borders='horizontal'] tr > * {
   border-bottom: 1px solid var(--mantine-color-default-border);
 }
@@ -54,9 +36,4 @@
   position: sticky;
   z-index: 1;
   top: 0;
-}
-
-.selectionCell {
-  width: 42px;
-  padding-inline: var(--mantine-spacing-sm);
 }

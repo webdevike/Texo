@@ -6,7 +6,7 @@
   display: grid;
   grid-template-columns: var(--texo-sidebar-width) minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr) auto;
-  background: var(--texo-color-surface, var(--mantine-color-gray-0));
+  background: var(--texo-color-surface, var(--mantine-color-default));
 }
 
 .sidebar {
@@ -32,7 +32,7 @@
   display: grid;
   grid-template-rows: 56px 48px minmax(0, 1fr);
   margin: var(--mantine-spacing-xs) var(--mantine-spacing-xs) 0 0;
-  border-radius: var(--mantine-radius-md);
+  border-radius: var(--mantine-radius-default);
   background: var(--mantine-color-body);
   box-shadow: var(--texo-card-shadow, var(--mantine-shadow-xs));
   overflow: hidden;

@@ -44,8 +44,8 @@
   left: -1px;
   max-width: 280px;
   overflow: hidden;
-  padding: 2px var(--mantine-spacing-xs);
-  border-radius: var(--mantine-radius-xs) var(--mantine-radius-xs) 0 0;
+  padding: calc(var(--mantine-spacing-xs) / 5) var(--mantine-spacing-xs);
+  border-radius: var(--mantine-radius-default) var(--mantine-radius-default) 0 0;
   background: var(--mantine-primary-color-filled);
   color: var(--mantine-primary-color-contrast);
   font-size: var(--mantine-font-size-xs);
@@ -91,7 +91,7 @@
   z-index: 4;
   padding: var(--mantine-spacing-sm);
   border: 1px solid var(--mantine-color-default-border);
-  border-radius: var(--mantine-radius-md);
+  border-radius: var(--mantine-radius-default);
   background: var(--mantine-color-body);
   box-shadow: var(--mantine-shadow-md);
 }

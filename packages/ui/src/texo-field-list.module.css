@@ -1,6 +1,6 @@
 .root {
   border: 1px solid var(--mantine-color-default-border);
-  border-radius: var(--mantine-radius-md);
+  border-radius: var(--mantine-radius-default);
   background: var(--texo-color-card, var(--mantine-color-body));
   overflow: hidden;
 }
@@ -26,7 +26,7 @@
 }
 
 .row[data-open] > .rowMain {
-  background: var(--texo-color-muted, var(--mantine-color-gray-0));
+  background: var(--texo-color-muted, var(--mantine-color-default-hover));
 }
 
 .rowMain {
@@ -50,7 +50,7 @@
   justify-content: center;
   width: 32px;
   height: 28px;
-  border-radius: var(--mantine-radius-sm);
+  border-radius: var(--mantine-radius-default);
   flex: none;
 }
 

@@ -9,6 +9,7 @@ import { tooltip } from '@tanstack/charts/tooltip';
 import {
   BaseBadge,
   BaseCard,
+  BaseDrawer,
   BaseGroup,
   BaseSelect,
   BaseStack,
@@ -19,6 +20,7 @@ import {
 } from '@texo/ui';
 import { ListPageLayout } from '../list-page-layout';
 import classes from './dashboard.module.css';
+import layoutClasses from '../list-page-layout.module.css';
 
 export const page = { id: 'dashboard', label: 'Dashboard' };
 
@@ -287,6 +289,8 @@ function PipelineChart({ rows }: { rows: Renewal[] }) {
           color: 'type',
           key: (cell) => `${cell.week}/${cell.type}`,
           inset: 6,
+          stroke: 'var(--texo-color-card, var(--mantine-color-body))',
+          strokeWidth: 2,
           radius: 3,
         }),
       ],
@@ -343,6 +347,11 @@ function PipelineChart({ rows }: { rows: Renewal[] }) {
 export default function DashboardPage() {
   const [period, setPeriod] = useState<Period>('This month');
   const [owner, setOwner] = useState('All owners');
+  const [selected, setSelected] = useState<Renewal | null>(null);
+  const [opened, setOpened] = useState(false);
+  const selectedAttention = selected
+    ? attention.find((item) => item.customer === selected.customer)
+    : undefined;
   const all = owner === 'All owners';
   const rows = renewals.filter((row) => all || row.owner === owner);
   const flagged = attention.filter((item) => all || item.owner === owner);
@@ -356,6 +365,7 @@ export default function DashboardPage() {
   const most = Math.max(1, ...byOwner.map((entry) => entry.count));
 
   return (
+    <>
     <ListPageLayout
       title="Dashboard"
       description="Account health, renewals, and the customers that need a hand this period."
@@ -423,6 +433,10 @@ export default function DashboardPage() {
               <TexoDataTable
                 columns={columns}
                 rows={rows}
+                onOpen={(renewal) => {
+                  setSelected(renewal);
+                  setOpened(true);
+                }}
                 renderCell={(column, value, row) => {
                   if (column.key === 'customer')
                     return (
@@ -537,5 +551,48 @@ export default function DashboardPage() {
         </BaseStack>
       </div>
     </ListPageLayout>
+      <BaseDrawer
+        opened={opened}
+        onClose={() => setOpened(false)}
+        position="right"
+        size="md"
+        padding="xl"
+        title="Renewal details"
+        closeButtonProps={{ 'aria-label': 'Close renewal details' }}
+      >
+        {selected && (
+          <BaseStack
+            gap="xl"
+            data-target="details"
+            data-target-label="Renewal details"
+            data-record={selected.id}
+            data-record-label={selected.customer}
+          >
+            <BaseStack gap={8}>
+              <BaseTitle order={2} size="h3">{selected.customer}</BaseTitle>
+              <BaseGroup><TypeBadge value={selected.type} /></BaseGroup>
+              <BaseText size="xs" c="dimmed">Sample data</BaseText>
+            </BaseStack>
+            <dl className={layoutClasses.details}>
+              <div><dt>Account owner</dt><dd>{selected.owner}</dd></div>
+              <div><dt>Deal value</dt><dd>{currency.format(selected.value)}</dd></div>
+              <div><dt>Expected close</dt><dd>{selected.closes}</dd></div>
+              <div><dt>Pipeline week</dt><dd>Week of {selected.week}</dd></div>
+            </dl>
+            <BaseStack gap={8}>
+              <BaseTitle order={3} size="h5">Account attention</BaseTitle>
+              {selectedAttention ? (
+                <>
+                  <BaseGroup><SeverityBadge value={selectedAttention.severity} /></BaseGroup>
+                  <BaseText size="sm">{selectedAttention.reason}</BaseText>
+                </>
+              ) : (
+                <BaseText size="sm" c="dimmed">No attention flags in the sample data.</BaseText>
+              )}
+            </BaseStack>
+          </BaseStack>
+        )}
+      </BaseDrawer>
+    </>
   );
 }

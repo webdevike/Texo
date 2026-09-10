@@ -188,3 +188,73 @@ export type BaseLoaderProps = LoaderProps;
 export type BaseNotificationProps = NotificationProps;
 export type BasePillProps = PillProps;
 export type BasePopoverProps = PopoverProps;
+
+// Page-shell slice: document, layout, and form primitives full apps need.
+import {
+    Alert,
+    type AlertProps,
+    Anchor,
+    type AnchorProps,
+    Burger,
+    type BurgerProps,
+    Container,
+    type ContainerProps,
+    Grid,
+    type GridProps,
+    HoverCard,
+    type HoverCardProps,
+    Image,
+    type ImageProps,
+    NativeSelect,
+    type NativeSelectProps,
+    Pagination,
+    type PaginationProps,
+    Paper,
+    type PaperProps,
+    PasswordInput,
+    type PasswordInputProps,
+    PinInput,
+    type PinInputProps,
+    SimpleGrid,
+    type SimpleGridProps,
+    ThemeIcon,
+    type ThemeIconProps,
+    Timeline,
+    type TimelineProps,
+    UnstyledButton,
+    type UnstyledButtonProps,
+} from './mantine';
+
+export const BaseAlert = Alert;
+export const BaseAnchor = Anchor;
+export const BaseBurger = Burger;
+export const BaseContainer = Container;
+export const BaseGrid = Grid;
+export const BaseHoverCard = HoverCard;
+export const BaseImage = Image;
+export const BaseNativeSelect = NativeSelect;
+export const BasePagination = Pagination;
+export const BasePaper = Paper;
+export const BasePasswordInput = PasswordInput;
+export const BasePinInput = PinInput;
+export const BaseSimpleGrid = SimpleGrid;
+export const BaseThemeIcon = ThemeIcon;
+export const BaseTimeline = Timeline;
+export const BaseUnstyledButton = UnstyledButton;
+
+export type BaseAlertProps = AlertProps;
+export type BaseAnchorProps = AnchorProps;
+export type BaseBurgerProps = BurgerProps;
+export type BaseContainerProps = ContainerProps;
+export type BaseGridProps = GridProps;
+export type BaseHoverCardProps = HoverCardProps;
+export type BaseImageProps = ImageProps;
+export type BaseNativeSelectProps = NativeSelectProps;
+export type BasePaginationProps = PaginationProps;
+export type BasePaperProps = PaperProps;
+export type BasePasswordInputProps = PasswordInputProps;
+export type BasePinInputProps = PinInputProps;
+export type BaseSimpleGridProps = SimpleGridProps;
+export type BaseThemeIconProps = ThemeIconProps;
+export type BaseTimelineProps = TimelineProps;
+export type BaseUnstyledButtonProps = UnstyledButtonProps;

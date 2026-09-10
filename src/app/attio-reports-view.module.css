@@ -29,10 +29,10 @@
   height: 20px;
   flex: 0 0 20px;
   place-items: center;
-  border-radius: var(--mantine-radius-xs);
+  border-radius: var(--mantine-radius-default);
   background: var(--mantine-color-text);
   color: var(--mantine-color-body);
-  font-size: 10px;
+  font-size: calc(var(--mantine-font-size-xs) * 0.875);
   font-weight: 700;
 }
 
@@ -40,14 +40,14 @@
   display: inline-flex;
   width: max-content;
   align-items: center;
-  gap: 3px;
-  padding: 2px 6px;
+  gap: calc(var(--mantine-spacing-xs) / 3);
+  padding: calc(var(--mantine-spacing-xs) / 5) calc(var(--mantine-spacing-sm) / 2);
   border: 1px solid var(--mantine-color-default-border);
-  border-radius: var(--mantine-radius-sm);
+  border-radius: var(--mantine-radius-default);
   background: var(--texo-color-muted);
 }
 
-.badge[data-tone='link'] { color: var(--mantine-color-blue-6); }
+.badge[data-tone='link'] { color: var(--mantine-color-anchor); }
 .badge[data-tone='violet'] { background: var(--mantine-color-violet-light); color: var(--mantine-color-violet-light-color); }
 .badge[data-tone='green'] { background: var(--mantine-color-green-light); color: var(--mantine-color-green-light-color); }
 .badge[data-tone='blue'] { background: var(--mantine-color-blue-light); color: var(--mantine-color-blue-light-color); }

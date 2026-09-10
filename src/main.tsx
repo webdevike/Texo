@@ -4,9 +4,9 @@ import {
   createShikiAdapter,
 } from '@mantine/code-highlight';
 import {
-  TEXO_THEME_PRESETS,
   TexoThemeProvider,
-  type TexoThemeConfig,
+  readTexoTheme,
+  writeTexoTheme,
 } from '@texo/ui';
 import { BrowserRouter } from 'react-router-dom';
 import * as ReactDOM from 'react-dom/client';
@@ -16,20 +16,7 @@ const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement,
 );
 
-const THEME_KEY = 'texo.theme';
-const saved = (() => {
-  try {
-    const raw = localStorage.getItem(THEME_KEY);
-    if (!raw) return undefined;
-    const t = JSON.parse(raw) as { config: TexoThemeConfig; preset: string };
-    return {
-      config: { ...TEXO_THEME_PRESETS[0].config, ...t.config },
-      preset: t.preset,
-    };
-  } catch {
-    return undefined;
-  }
-})();
+const saved = readTexoTheme();
 
 // Loaded on demand: shiki's grammars and wasm are large and only needed once code renders.
 const shikiAdapter = createShikiAdapter(async () => {
@@ -55,9 +42,7 @@ root.render(
   <StrictMode>
     <TexoThemeProvider
       initial={saved}
-      onChange={(config, preset) =>
-        localStorage.setItem(THEME_KEY, JSON.stringify({ config, preset }))
-      }
+      onChange={writeTexoTheme}
     >
       <CodeHighlightAdapterProvider adapter={shikiAdapter}>
         <BrowserRouter

@@ -1,0 +1,106 @@
+.root {
+  min-width: 0;
+  max-width: 100%;
+  font-family: var(--mantine-font-family);
+  overflow-wrap: anywhere;
+}
+
+.root :where(p, ul, ol, blockquote, pre, h1, h2, h3, h4, h5, h6) {
+  margin-block: 0;
+}
+
+.root > * + *,
+.root li > * + * {
+  margin-top: var(--mantine-spacing-sm);
+}
+
+.root :where(ul, ol) {
+  padding-inline-start: calc(var(--mantine-spacing-md) * 1.5);
+}
+
+.root li + li {
+  margin-top: calc(var(--mantine-spacing-xs) / 2);
+}
+
+.root :global(.task-list-item) {
+  list-style: none;
+}
+
+.root input[type='checkbox'] {
+  accent-color: var(--mantine-primary-color-filled);
+  margin-inline-end: var(--mantine-spacing-xs);
+}
+
+.root a {
+  color: var(--mantine-color-anchor);
+  text-decoration: underline;
+}
+
+.root code {
+  font-family: var(--mantine-font-family-monospace);
+  font-size: inherit;
+  color: inherit;
+  background: var(--texo-color-muted);
+  border-radius: var(--mantine-radius-default);
+  padding-inline: calc(var(--mantine-spacing-xs) / 2);
+}
+
+.root pre {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: var(--mantine-spacing-sm);
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-default);
+  background: var(--texo-color-input);
+  white-space: pre;
+  overflow-wrap: normal;
+}
+
+.root pre code {
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  line-height: inherit;
+}
+
+.root blockquote {
+  margin-inline: 0;
+  padding-inline-start: var(--mantine-spacing-sm);
+  border-inline-start: 1px solid var(--mantine-color-default-border);
+  color: var(--mantine-color-dimmed);
+}
+
+.root hr {
+  border: 0;
+  border-top: 1px solid var(--mantine-color-default-border);
+  margin-block: var(--mantine-spacing-md);
+}
+
+.tableScroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.tableScroll table {
+  width: 100%;
+  border-collapse: collapse;
+  font: inherit;
+}
+
+.tableScroll :where(th, td) {
+  padding: var(--mantine-spacing-xs);
+  border: 1px solid var(--mantine-color-default-border);
+  text-align: start;
+}
+
+.tableScroll th {
+  background: var(--texo-color-muted);
+}
+
+.root img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--mantine-radius-default);
+}

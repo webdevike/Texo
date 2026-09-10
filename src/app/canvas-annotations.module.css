@@ -43,8 +43,8 @@
   left: -1px;
   max-width: 240px;
   overflow: hidden;
-  padding: 2px var(--mantine-spacing-xs);
-  border-radius: var(--mantine-radius-xs) var(--mantine-radius-xs) 0 0;
+  padding: calc(var(--mantine-spacing-xs) / 5) var(--mantine-spacing-xs);
+  border-radius: var(--mantine-radius-default) var(--mantine-radius-default) 0 0;
   background: var(--mantine-primary-color-filled);
   color: var(--mantine-primary-color-contrast);
   font-size: var(--mantine-font-size-xs);
@@ -116,7 +116,7 @@
 }
 
 .note[data-selected] {
-  border-radius: var(--mantine-radius-xs);
+  border-radius: var(--mantine-radius-default);
   background: var(--mantine-primary-color-light);
   outline: 1px solid var(--mantine-primary-color-filled);
   outline-offset: -1px;
@@ -126,7 +126,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 4px;
+  gap: calc(var(--mantine-spacing-xs) / 2);
   width: 100%;
   padding: 0;
   border: 0;

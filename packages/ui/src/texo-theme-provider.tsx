@@ -20,11 +20,19 @@ import {
 } from './components';
 import componentClasses from './theme-components.module.css';
 import { BaseProvider } from './provider';
-import type {
-  CSSVariablesResolver,
-  MantineColorsTuple,
-  MantineThemeOverride,
+import {
+  ColorSchemeScript,
+  type CSSVariablesResolver,
+  type MantineColorsTuple,
+  type MantineThemeOverride,
 } from './mantine';
+
+/**
+ * Inline <head> script for server-rendered apps: sets the color scheme before
+ * hydration so the first paint matches the provider's forced scheme. Not a
+ * visual component, hence no Base* alias (the admin gallery renders those).
+ */
+export const TexoColorSchemeScript = ColorSchemeScript;
 
 export const TEXO_SIZE_KEYS = ['xs', 'sm', 'md', 'lg', 'xl'] as const;
 export type TexoSize = (typeof TEXO_SIZE_KEYS)[number];
@@ -472,7 +480,12 @@ export function TexoThemeProvider({ children, initial, onChange }: TexoThemeProv
 
   const themeOverride = useMemo<MantineThemeOverride>(() => ({
     autoContrast: history.present.autoContrast,
-    colors: { [history.present.primaryColor]: history.present.primaryPalette },
+    // `primary` is a stable key for consumers: `c="primary"` / `--mantine-color-primary-*`
+    // keep pointing at the current primary palette whatever the preset names it.
+    colors: {
+      [history.present.primaryColor]: history.present.primaryPalette,
+      primary: history.present.primaryPalette,
+    },
     components: {
       Card: BaseCard.extend({ classNames: { root: componentClasses.card } }),
       Checkbox: BaseCheckbox.extend({ classNames: { input: componentClasses.checkboxInput } }),
@@ -549,11 +562,13 @@ export function TexoThemeProvider({ children, initial, onChange }: TexoThemeProv
       '--texo-color-muted': history.present.semantic.light.muted,
       '--texo-color-popover': history.present.semantic.light.popover,
       '--texo-color-surface': history.present.semantic.light.surface,
+      '--texo-chat-context-background': history.present.semantic.light.surface,
       '--texo-card-shadow': history.present.effects.cardShadow,
       '--texo-control-shadow': history.present.effects.controlShadow,
     },
     dark: {
       '--mantine-color-body': history.present.semantic.dark.body,
+      '--mantine-color-default': history.present.semantic.dark.body,
       '--mantine-color-default-border': history.present.semantic.dark.border,
       '--mantine-color-dimmed': history.present.semantic.dark.dimmed,
       '--mantine-color-placeholder': history.present.semantic.dark.placeholder,
@@ -563,6 +578,7 @@ export function TexoThemeProvider({ children, initial, onChange }: TexoThemeProv
       '--texo-color-muted': history.present.semantic.dark.muted,
       '--texo-color-popover': history.present.semantic.dark.popover,
       '--texo-color-surface': history.present.semantic.dark.surface,
+      '--texo-chat-context-background': 'color-mix(in srgb, var(--mantine-color-body), var(--mantine-color-black) 25%)',
       '--texo-control-shadow': history.present.effects.controlShadow,
       '--texo-card-shadow': history.present.effects.cardShadow,
     },

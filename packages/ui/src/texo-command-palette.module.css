@@ -9,14 +9,13 @@
 .list {
   max-height: 360px;
   overflow-y: auto;
-  padding: 4px;
+  padding: calc(var(--mantine-spacing-xs) / 2);
 }
 
 .group {
-  padding: 8px 12px 4px;
+  padding: var(--mantine-spacing-xs) var(--mantine-spacing-sm) calc(var(--mantine-spacing-xs) / 2);
   font-size: calc(var(--mantine-font-size-xs) * 0.875);
   font-weight: 600;
-  text-transform: uppercase;
   color: var(--mantine-color-dimmed);
 }
 
@@ -24,11 +23,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--mantine-spacing-sm);
   width: 100%;
-  padding: 6px 12px;
+  padding: calc(var(--mantine-spacing-sm) / 2) var(--mantine-spacing-sm);
   border: 0;
-  border-radius: var(--mantine-radius-sm);
+  border-radius: var(--mantine-radius-default);
   background: transparent;
   color: inherit;
   font: inherit;
@@ -49,15 +48,15 @@
 .keys {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: calc(var(--mantine-spacing-xs) / 2);
   flex-shrink: 0;
 }
 
 .chordGap {
-  width: 4px;
+  width: calc(var(--mantine-spacing-xs) / 2);
 }
 
 .empty {
-  padding: 24px 12px;
+  padding: calc(var(--mantine-spacing-sm) * 2) var(--mantine-spacing-sm);
   text-align: center;
 }

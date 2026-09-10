@@ -17,6 +17,7 @@ import type {
   ChatStatus,
   ChatThread,
 } from './chat-protocol';
+import type { AgentContextSnapshot } from '../context/agent-context';
 
 const EVENT = 'texo:chat';
 const hot = import.meta.hot;
@@ -30,7 +31,9 @@ type ChatContextValue = {
   active: ThreadState | null;
   open: (id: string | null) => void;
   create: () => void;
-  send: (text: string) => void;
+  contextEnabled: boolean;
+  setContextEnabled: (enabled: boolean) => void;
+  send: (text: string, context?: AgentContextSnapshot | null) => void;
   abort: () => void;
   answer: (id: string, answer: ChatAnswer) => void;
   remove: (id: string) => void;
@@ -52,6 +55,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [states, setStates] = useState<Record<string, ThreadState>>({});
+  const [contextByThread, setContextByThread] = useState<Record<string, boolean>>({});
   const activeRef = useRef(activeId);
   activeRef.current = activeId;
 
@@ -144,9 +148,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       active: activeId ? (states[activeId] ?? null) : null,
       open,
       create: () => post({ op: 'create' }),
-      send: (text) => {
+      contextEnabled: activeId ? (contextByThread[activeId] ?? true) : true,
+      setContextEnabled: (enabled) => {
         const id = activeRef.current;
-        if (id) post({ op: 'send', threadId: id, text });
+        if (id) setContextByThread((current) => ({ ...current, [id]: enabled }));
+      },
+      send: (text, context) => {
+        const id = activeRef.current;
+        if (id) post({ op: 'send', threadId: id, text, context });
       },
       abort: () => {
         const id = activeRef.current;
@@ -158,10 +167,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       },
       remove: (id) => {
         post({ op: 'remove', threadId: id });
+        setContextByThread((current) => {
+          const next = { ...current };
+          delete next[id];
+          return next;
+        });
         if (activeRef.current === id) setActiveId(null);
       },
     }),
-    [threads, activeId, states, open],
+    [threads, activeId, states, open, contextByThread],
   );
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

@@ -3,7 +3,7 @@
   display: grid;
   grid-template-columns: var(--texo-sidebar-width) minmax(0, 1fr);
   overflow: hidden;
-  border-radius: var(--mantine-radius-md);
+  border-radius: var(--mantine-radius-default);
   background: var(--mantine-color-body);
 }
 
@@ -20,7 +20,7 @@
   min-height: var(--texo-sidebar-row-height);
   padding-block: 0;
   padding-inline: calc(var(--mantine-spacing-xs) / 2);
-  border-radius: var(--mantine-radius-sm);
+  border-radius: var(--mantine-radius-default);
   color: var(--mantine-color-text);
 }
 
@@ -51,7 +51,7 @@
   height: 28px;
   flex: 0 0 28px;
   place-items: center;
-  border-radius: var(--mantine-radius-sm);
+  border-radius: var(--mantine-radius-default);
   background: var(--mantine-color-default-hover);
   color: var(--mantine-color-dimmed);
   font-size: var(--mantine-font-size-xs);
@@ -61,7 +61,7 @@
   min-width: 0;
   margin: var(--mantine-spacing-sm) var(--mantine-spacing-sm) var(--mantine-spacing-sm) 0;
   overflow: hidden;
-  border-radius: var(--mantine-radius-md);
+  border-radius: var(--mantine-radius-default);
   background: var(--texo-color-surface, var(--mantine-color-default));
   box-shadow: var(--mantine-shadow-sm);
 }
@@ -91,8 +91,8 @@
 }
 
 .metricValue {
-  margin-top: 4px;
-  font-size: 1.45rem;
+  margin-top: calc(var(--mantine-spacing-xs) / 2);
+  font-size: calc(var(--mantine-font-size-xl) * 1.16);
   line-height: 1.1;
 }
 
@@ -100,9 +100,9 @@
 .pill,
 .number {
   width: max-content;
-  padding: 2px 7px;
+  padding: calc(var(--mantine-spacing-xs) / 5) calc(var(--mantine-spacing-sm) / 2);
   border: 1px solid var(--mantine-color-default-border);
-  border-radius: var(--mantine-radius-sm);
+  border-radius: var(--mantine-radius-default);
 }
 
 .visitors {
@@ -112,7 +112,7 @@
 .periods {
   overflow: hidden;
   border: 1px solid var(--mantine-color-default-border);
-  border-radius: var(--mantine-radius-sm);
+  border-radius: var(--mantine-radius-default);
 }
 
 .periods button {
@@ -135,15 +135,15 @@
 }
 
 .viewTabs {
-  padding: 2px;
-  border-radius: var(--mantine-radius-sm);
+  padding: calc(var(--mantine-spacing-xs) / 5);
+  border-radius: var(--mantine-radius-default);
   background: var(--mantine-color-default-hover);
 }
 
 .table {
   overflow: hidden;
   overflow-x: auto;
-  border-radius: var(--mantine-radius-md);
+  border-radius: var(--mantine-radius-default);
 }
 
 .tableRow {

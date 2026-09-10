@@ -1,0 +1,48 @@
+.shell {
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-default);
+  background: var(--texo-color-card);
+  outline: none;
+  overflow: hidden;
+}
+
+.shell:focus-visible {
+  border-color: var(--mantine-primary-color-filled);
+}
+
+.surface {
+  background: var(--texo-color-card);
+}
+
+.header {
+  height: var(--texo-table-row-height);
+  background: var(--texo-table-header-background);
+  color: var(--mantine-color-dimmed);
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cell {
+  height: var(--texo-table-row-height);
+  white-space: nowrap;
+}
+
+.tableCell {
+  padding-inline: var(--mantine-spacing-sm);
+  vertical-align: middle;
+}
+
+.gridCell {
+  display: flex;
+  align-items: center;
+  gap: var(--mantine-spacing-xs);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.selectionCell {
+  width: 42px;
+  padding-inline: var(--mantine-spacing-sm);
+}

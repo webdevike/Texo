@@ -7,6 +7,7 @@ import {
 } from '@tabler/icons-react';
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useLayoutEffect,
@@ -40,6 +41,10 @@ import {
   type ProjectDocumentState,
 } from './use-project-document';
 import classes from './prototype.module.css';
+import { describePreviewTarget } from './preview-targets';
+import type { AgentPrototypeContext, AgentTarget } from '../context/agent-context';
+import { useAgentContextSource } from '../context/agent-context-provider';
+import { previewUrl, usePreview } from './preview';
 
 /**
  * Prototype mode for a designed page. Hover a marked element (`data-target`),
@@ -74,6 +79,8 @@ type PrototypeContextValue = ProjectDocumentState<PrototypeDocument> & {
   setActive: (active: boolean) => void;
   focusedId: string | null;
   focus: (id: string | null) => void;
+  draft: Draft | null;
+  setDraft: (draft: Draft | null) => void;
   visibleIds: readonly string[];
   setVisibleIds: (ids: string[]) => void;
   /** Requests column beside the page frame. */
@@ -101,15 +108,64 @@ export function PrototypeProvider({
 }) {
   const file = useProjectDocument(prototypeFile);
   const [active, setActive] = useState(false);
-  const [focusedId, focus] = useState<string | null>(null);
+  const [focused, setFocused] = useState<{ page: string | null; id: string | null } | null>(null);
+  const [draftState, setDraftState] = useState<{ page: string | null; value: Draft } | null>(null);
+  const focusedId = active && focused?.page === page ? focused.id : null;
+  const draft = active && draftState?.page === page ? draftState.value : null;
+  const setDraft = useCallback((value: Draft | null) => {
+    setDraftState(value ? { page, value } : null);
+  }, [page]);
+  const focus = useCallback((id: string | null) => {
+    setFocused({ page, id });
+    setDraftState(null);
+  }, [page]);
   const [visibleIds, setVisibleIds] = useState<string[]>([]);
   const [panelOpen, setPanelOpen] = useState(false);
 
   useEffect(() => {
-    focus(null);
+    setFocused(null);
+    setDraftState(null);
   }, [page, active]);
 
   const { update } = file;
+  const source = useMemo<AgentPrototypeContext>(() => {
+    const enabled = active && page !== null;
+    const comments = file.document?.comments.filter((comment) => comment.page === page) ?? [];
+    const selected = draft?.hit ?? comments.find((comment) => comment.id === focusedId);
+    const target: AgentTarget | null = selected ? {
+      key: selected.target,
+      label: selected.targetLabel,
+      record: selected.record ?? undefined,
+      recordLabel: selected.recordLabel ?? undefined,
+    } : null;
+    const unavailable = file.error
+      ? { status: 'unavailable' as const, reason: file.error }
+      : !file.document
+        ? { status: 'loading' as const, reason: 'Loading prototype requests.' }
+        : null;
+    return {
+      active: enabled,
+      selection: !enabled
+        ? { status: 'ready', value: null }
+        : unavailable ?? { status: 'ready', value: target },
+      requests: !page
+        ? { status: 'unavailable', reason: 'No preview page is selected.' }
+        : unavailable ?? {
+          status: 'ready',
+          value: comments.filter((comment) => !comment.resolved).map((comment) => ({
+            id: comment.id,
+            body: comment.body,
+            target: {
+              key: comment.target,
+              label: comment.targetLabel,
+              record: comment.record ?? undefined,
+              recordLabel: comment.recordLabel ?? undefined,
+            },
+          })),
+        },
+    };
+  }, [active, page, file.document, file.error, draft, focusedId]);
+  useAgentContextSource('prototype', source);
   const value = useMemo<PrototypeContextValue>(
     () => ({
       ...file,
@@ -118,6 +174,8 @@ export function PrototypeProvider({
       setActive,
       focusedId,
       focus,
+      draft,
+      setDraft,
       visibleIds,
       setVisibleIds,
       panelOpen,
@@ -140,7 +198,7 @@ export function PrototypeProvider({
           comments: current.comments.filter((comment) => comment.id !== id),
         })),
     }),
-    [file, page, active, focusedId, visibleIds, panelOpen, update],
+    [file, page, active, focusedId, focus, draft, setDraft, visibleIds, panelOpen, update],
   );
 
   return (
@@ -151,22 +209,7 @@ export function PrototypeProvider({
 }
 
 function describe(element: Element, content: Element): Omit<Hit, 'rect'> {
-  const keys: string[] = [];
-  let node: Element | null = element;
-  while (node && node !== content) {
-    const key = (node as HTMLElement).dataset.target;
-    if (key) keys.unshift(key);
-    node = node.parentElement;
-  }
-  const data = (element as HTMLElement).dataset;
-  return {
-    element,
-    target: keys.join('.'),
-    targetLabel: data.targetLabel ?? keys[keys.length - 1] ?? 'Element',
-    record: data.record ?? null,
-    recordLabel: data.record ? (data.recordLabel ?? data.record) : null,
-    template: data.recordTemplate !== undefined,
-  };
+  return { element, ...describePreviewTarget(element, content) };
 }
 
 function candidates(content: Element) {
@@ -225,7 +268,8 @@ export function PrototypeSurface({
   onFrame: (frame: HTMLIFrameElement | null) => void;
 }) {
   const proto = usePrototype();
-  const { active, focusedId, focus, setVisibleIds } = proto;
+  const { framePage, pages } = usePreview();
+  const { active, focusedId, focus, draft, setDraft, setVisibleIds } = proto;
   const comments = useMemo(
     () => (proto.document?.comments ?? []).filter((c) => c.page === page),
     [proto.document, page],
@@ -237,17 +281,29 @@ export function PrototypeSurface({
     hit: Hit;
     box: Point & { width: number; height: number };
   } | null>(null);
-  const [draft, setDraft] = useState<Draft | null>(null);
+  const attachFrame = useCallback((element: HTMLIFrameElement | null) => {
+    frameRef.current = element;
+    onFrame(element);
+  }, [onFrame]);
   const [pins, setPins] = useState<Record<string, Point>>({});
   const [rootWidth, setRootWidth] = useState(0);
-  const content = () => frameRef.current?.contentDocument?.body ?? null;
+  const content = useCallback(() => {
+    try {
+      const frame = frameRef.current;
+      const document = frame?.contentDocument;
+      return page && framePage === page &&
+        frame?.contentWindow?.location.pathname === previewUrl(pages.find((item) => item.id === page)) &&
+        document?.documentElement.dataset.texoPage === page
+        ? document.body : null;
+    } catch {
+      return null;
+    }
+  }, [page, framePage, pages]);
 
   useEffect(() => {
-    if (!active) {
-      setDraft(null);
-      setHover(null);
-    }
-  }, [active]);
+    setDraft(null);
+    setHover(null);
+  }, [active, page, loads, setDraft]);
 
   // The frame is inert while Prototype is on so clicks target, not act.
   useEffect(() => {
@@ -257,7 +313,7 @@ export function PrototypeSurface({
     return () => {
       body.inert = false;
     };
-  }, [active, loads]);
+  }, [active, loads, content]);
 
   useLayoutEffect(() => {
     const root = rootRef.current;
@@ -266,11 +322,22 @@ export function PrototypeSurface({
     const view = frame?.contentWindow;
     if (!root || !frame || !body || !view || !active) {
       setVisibleIds([]);
+      setPins({});
       return;
     }
     let handle = 0;
     function measure() {
       if (!root || !body) return;
+      if (!content()) {
+        setPins({});
+        setVisibleIds([]);
+        setDraft(null);
+        return;
+      }
+      if (draft && !candidates(body).some((element) => {
+        const target = describe(element, body);
+        return target.target === draft.hit.target && target.record === draft.hit.record;
+      })) setDraft(null);
       const next: Record<string, Point> = {};
       for (const comment of comments) {
         const rect = resolve(body, comment)?.getBoundingClientRect();
@@ -308,7 +375,7 @@ export function PrototypeSurface({
       view.removeEventListener('scroll', schedule, true);
       view.removeEventListener('resize', schedule);
     };
-  }, [active, comments, loads, setVisibleIds]);
+  }, [active, comments, loads, content, draft, setDraft, setVisibleIds]);
 
   /** Overlay pointer position expressed in the frame's viewport. */
   function framePoint(event: { clientX: number; clientY: number }) {
@@ -358,10 +425,7 @@ export function PrototypeSurface({
       <iframe
         className={classes.frame}
         onLoad={() => setLoads((count) => count + 1)}
-        ref={(element) => {
-          frameRef.current = element;
-          onFrame(element);
-        }}
+        ref={attachFrame}
         src={src}
         title="Page preview"
       />

@@ -3,6 +3,14 @@ import { BaseBox, BaseText, TexoComponent } from '@texo/ui';
 import type { TexoComponentRegistry } from '@texo/ui';
 import { componentLibrary } from '../extensions/registry';
 import instances from 'virtual:texo-canvas-runtime';
+import type { AgentCanvasContext } from '../context/agent-context';
+import { useAgentContextSource } from '../context/agent-context-provider';
+
+const runtimeContext: AgentCanvasContext = {
+  mode: 'preview',
+  selection: { status: 'unavailable', reason: 'The runtime canvas has no editor selection state.' },
+  requests: { status: 'unavailable', reason: 'Canvas annotations are only available in the editor.' },
+};
 
 export function CanvasProvider({
   children,
@@ -10,6 +18,7 @@ export function CanvasProvider({
   registry: TexoComponentRegistry;
   children: ReactNode;
 }) {
+  useAgentContextSource('canvas', runtimeContext);
   return children;
 }
 

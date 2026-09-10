@@ -44,7 +44,7 @@
 .details dt {
   color: var(--mantine-color-dimmed);
   font-size: var(--mantine-font-size-xs);
-  margin-bottom: 4px;
+  margin-bottom: calc(var(--mantine-spacing-xs) / 2);
 }
 
 .details dd {

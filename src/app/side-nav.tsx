@@ -5,14 +5,18 @@ import {
   IconFile,
   IconLayoutGrid,
   IconPalette,
-  IconPencilPlus,
 } from '@tabler/icons-react';
 import { useState, type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { BaseActionIcon, BaseGroup, BaseText, BaseTooltip } from '@texo/ui';
+import {
+  BaseGroup,
+  BaseText,
+  TEXO_THEME_PRESETS,
+  TexoThemeSwatchMenu,
+  useTexoTheme,
+} from '@texo/ui';
 
 import { pagePath, usePreview } from './preview';
-import { useChat } from './use-chat';
 import classes from './side-nav.module.css';
 
 /**
@@ -28,7 +32,7 @@ export function SideNav({
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const preview = usePreview();
-  const chat = useChat();
+  const { applyPreset, config, preset } = useTexoTheme();
 
   return (
     <div className={classes.nav}>
@@ -44,18 +48,14 @@ export function SideNav({
             Texo
           </BaseText>
         </BaseGroup>
-        {chat.available && (
-          <BaseTooltip label="Ask Agent" withArrow>
-            <BaseActionIcon
-              aria-label="Ask Agent"
-              onClick={chat.create}
-              variant="default"
-              radius="md"
-            >
-              <IconPencilPlus size={16} />
-            </BaseActionIcon>
-          </BaseTooltip>
-        )}
+        <TexoThemeSwatchMenu
+          onChange={(value) => value !== 'custom' && applyPreset(value)}
+          options={[
+            ...(preset === 'custom' ? [{ config, label: 'Custom', value: 'custom' }] : []),
+            ...TEXO_THEME_PRESETS,
+          ]}
+          value={preset}
+        />
       </BaseGroup>
 
       <div className={classes.group}>
