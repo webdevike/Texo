@@ -247,7 +247,7 @@ function ColorsControls() {
                 ...current,
                 primaryShade: {
                   ...current.primaryShade,
-                  light: Number(value),
+                  light: Number(value) as TexoThemeConfig['primaryShade']['light'],
                 },
               }))
             }
@@ -262,7 +262,7 @@ function ColorsControls() {
                 ...current,
                 primaryShade: {
                   ...current.primaryShade,
-                  dark: Number(value),
+                  dark: Number(value) as TexoThemeConfig['primaryShade']['dark'],
                 },
               }))
             }

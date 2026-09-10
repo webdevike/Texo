@@ -6,16 +6,16 @@ const CSS_FILE = 'texo-ui.css';
 
 /**
  * Lib mode emits one CSS file but does not import it from the entry chunk.
- * Prepend the import so `import '@texo/ui'` pulls the styles in on its own.
+ * Prepend the import to the main entry so `import '@texo/ui'` pulls the styles
+ * in on its own. Adapter entries import the main entry's chunks, not the CSS.
  */
 function injectCss(): Plugin {
   return {
     name: 'texo-inject-css',
+    enforce: 'post',
     generateBundle(_, bundle) {
-      const entry = Object.values(bundle).find(
-        (chunk) => chunk.type === 'chunk' && chunk.isEntry,
-      );
-      if (entry && entry.type === 'chunk' && bundle[CSS_FILE]) {
+      const entry = bundle['index.js'];
+      if (entry?.type === 'chunk' && bundle[CSS_FILE]) {
         entry.code = `import './${CSS_FILE}';\n${entry.code}`;
       }
     },
@@ -33,15 +33,24 @@ export default defineConfig(() => ({
     cssMinify: false,
     minify: false,
     lib: {
-      entry: 'src/index.ts',
+      entry: {
+        index: 'src/index.ts',
+        'tanstack-start/index': 'src/tanstack-start/index.tsx',
+        'tanstack-start/vite': 'src/tanstack-start/vite.ts',
+        'next/index': 'src/next/index.tsx',
+        'next/config': 'src/next/config.ts',
+      },
       formats: ['es'] as const,
-      fileName: 'index',
+      fileName: (_, name) => `${name}.js`,
       cssFileName: CSS_FILE.replace(/\.css$/, ''),
     },
     rollupOptions: {
       // Everything that is not a relative or absolute path is a peer dependency,
       // including Mantine's stylesheet imports which stay as side-effect imports.
       external: (id) => !id.startsWith('.') && !id.startsWith('/') && !id.startsWith('\0'),
+      output: {
+        chunkFileNames: 'chunks/[name]-[hash].js',
+      },
     },
   },
   test: {

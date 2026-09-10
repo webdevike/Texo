@@ -37,6 +37,19 @@ export function defineTexoComponent<Props extends Record<string, unknown>>(
   return definition;
 }
 
+/** True for values produced by `defineTexoComponent`; used to collect definitions from discovered modules. */
+export function isTexoComponentDefinition(value: unknown): value is TexoComponentDefinition {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<TexoComponentDefinition>;
+  return (
+    typeof candidate.id === 'string' &&
+    typeof candidate.name === 'string' &&
+    candidate.component != null &&
+    typeof candidate.properties === 'object' &&
+    typeof candidate.defaultProps === 'object'
+  );
+}
+
 class TexoComponentErrorBoundary extends Component<
   { children: ReactNode; componentName: string },
   { error: Error | null }

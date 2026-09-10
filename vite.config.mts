@@ -6,6 +6,7 @@ import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
 import { projectFiles } from './tools/project-files';
 import { chatThreads } from './tools/chat-plugin';
 import { previewApp } from './tools/preview-plugin';
+import { projectComponents } from './tools/project-components';
 
 export default defineConfig(() => ({
   root: import.meta.dirname,
@@ -25,6 +26,7 @@ export default defineConfig(() => ({
     projectFiles(),
     chatThreads(),
     previewApp(),
+    projectComponents(),
   ],
   // Uncomment this if you are using workers.
   // worker: {

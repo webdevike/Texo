@@ -1,6 +1,6 @@
 {
   "name": "@texo/ui",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Texo UI system: Mantine under stable Base* names plus Texo composites, presets, and the workspace bridge.",
   "license": "MIT",
   "repository": {
@@ -20,6 +20,22 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./tanstack-start": {
+      "types": "./dist/tanstack-start/index.d.ts",
+      "default": "./dist/tanstack-start/index.js"
+    },
+    "./tanstack-start/vite": {
+      "types": "./dist/tanstack-start/vite.d.ts",
+      "default": "./dist/tanstack-start/vite.js"
+    },
+    "./next": {
+      "types": "./dist/next/index.d.ts",
+      "default": "./dist/next/index.js"
+    },
+    "./next/config": {
+      "types": "./dist/next/config.d.ts",
+      "default": "./dist/next/config.js"
+    },
     "./styles.css": "./dist/texo-ui.css",
     "./package.json": "./package.json"
   },
@@ -29,8 +45,7 @@
     "./dist/index.js"
   ],
   "scripts": {
-    "build": "vite build && tsc -p tsconfig.build.json",
-    "pack": "pnpm build && pnpm pack --pack-destination ../../dist/packages"
+    "build": "vite build && tsc -p tsconfig.build.json"
   },
   "peerDependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -40,10 +55,18 @@
     "@mantine/core": "9.6.0",
     "@mantine/hooks": "9.6.0",
     "@tabler/icons-react": "^3.46.0",
+    "@tanstack/react-router": ">=1.100.0",
     "@tanstack/react-virtual": "^3.14.11",
+    "next": ">=14.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.1.0",
-    "remark-gfm": "^4.0.1"
+    "remark-gfm": "^4.0.1",
+    "vite": ">=5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@tanstack/react-router": { "optional": true },
+    "next": { "optional": true },
+    "vite": { "optional": true }
   }
 }
